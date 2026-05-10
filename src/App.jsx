@@ -2,33 +2,59 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore'; // Importamos doc y getDoc
 import Login from './Login';
 import Album from './Album';
 import Trueques from './Trueques';
 import Estadisticas from './Estadisticas';
+import Progreso from './Progreso';
 import MapaCiudades from './MapaCiudades';
 import Admin from './Admin';
 
+// COLORES OFICIALES MUNDIAL 2026
+const WC_COLORS = {
+  green: "#00B140",
+  darkBlue: "#00205B",
+  lightBlue: "#00A3E0",
+  red: "#E4002B",
+  lime: "#97D700",
+  white: "#FFFFFF"
+};
+
 function App() {
   const [usuario, setUsuario] = useState(null);
+  const [nombreUsuario, setNombreUsuario] = useState(''); // <-- NUEVO ESTADO PARA EL NOMBRE
   const [pestaña, setPestaña] = useState('album');
   const [publicaciones, setPublicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  // --- CONFIGURACIÓN ADMIN (Pon tu correo aquí) ---
   const EMAILS_ADMIN = ["miglio3929@gmail.com"]; 
   const esAdmin = usuario && EMAILS_ADMIN.includes(usuario.email);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
       setUsuario(user);
+      
+      if (user) {
+        // <-- NUEVA LÓGICA: Buscar el nombre del usuario en Firestore
+        try {
+          const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+          if (userDoc.exists() && userDoc.data().nombre) {
+            // Juntamos el nombre y el apellido
+            setNombreUsuario(`${userDoc.data().nombre} ${userDoc.data().apellido || ''}`.trim());
+          }
+        } catch (error) {
+          console.error("Error al obtener datos del usuario:", error);
+        }
+      } else {
+        setNombreUsuario('');
+      }
+      
       setCargando(false);
     });
     return () => unsub();
   }, []);
 
-  // Carga global de publicaciones (para Mapa y Admin)
   const cargarGlobal = async () => {
     try {
         const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
@@ -40,24 +66,23 @@ function App() {
   useEffect(() => { if (usuario) cargarGlobal(); }, [usuario, pestaña]);
 
   if (cargando) return (
-    <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#002b5e", color: "white", fontFamily: "sans-serif" }}>
+    <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: WC_COLORS.darkBlue, color: WC_COLORS.white, fontFamily: "sans-serif" }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: "3em", marginBottom: "10px" }}>⚽</div>
-        <h2 style={{ fontWeight: "300", letterSpacing: "2px" }}>CARGANDO MISMONAS...</h2>
+        <h2 style={{ fontWeight: "900", letterSpacing: "2px" }}>CARGANDO MISMONAS...</h2>
       </div>
     </div>
   );
 
   if (!usuario) return <Login />;
 
-  // Estilo para botones de navegación (Responsive y Modernos)
   const estiloBoton = (id, especial = false) => ({
     flex: "1 1 120px",
     padding: "12px 5px",
     borderRadius: "12px",
     border: "none",
-    background: pestaña === id ? (especial ? "#991b1b" : "#002b5e") : "#f1f5f9",
-    color: pestaña === id ? "white" : "#002b5e",
+    background: pestaña === id ? (especial ? WC_COLORS.red : WC_COLORS.green) : "#f1f5f9",
+    color: pestaña === id ? WC_COLORS.white : WC_COLORS.darkBlue,
     cursor: "pointer",
     fontWeight: "bold",
     fontSize: "0.9em",
@@ -67,33 +92,35 @@ function App() {
     justifyContent: "center",
     gap: "5px",
     textTransform: "uppercase",
-    letterSpacing: "0.5px"
+    letterSpacing: "0.5px",
+    boxShadow: pestaña === id ? `0 4px 10px ${WC_COLORS.green}40` : "none"
   });
 
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", color: "#1e293b" }}>
       
-      {/* HEADER DE PRODUCCIÓN - ANCHO Y PROFESIONAL */}
-      <header style={{ background: "linear-gradient(135deg, #002b5e 0%, #004e92 100%)", color: "white", padding: "20px 0", boxShadow: "0 4px 15px rgba(0,0,0,0.15)" }}>
+      <header style={{ background: WC_COLORS.darkBlue, color: WC_COLORS.white, padding: "20px 0", borderBottom: `4px solid ${WC_COLORS.lime}`, boxShadow: "0 4px 15px rgba(0,0,0,0.15)" }}>
         <div style={{ maxWidth: "1100px", margin: "auto", padding: "0 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           
-          {/* LOGO ALUSIVO AL FÚTBOL */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-            <div style={{ background: "white", width: "45px", height: "45px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5em", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
+            <div style={{ background: WC_COLORS.white, width: "45px", height: "45px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5em", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
               ⚽
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: "1.6em", fontWeight: "800", letterSpacing: "-1px" }}>
-                MIS<span style={{ color: "#f59e0b" }}>MONAS</span> <span style={{ fontWeight: "300", fontSize: "0.8em" }}>Hub</span>
+              <h1 style={{ margin: 0, fontSize: "1.8em", fontWeight: "900", letterSpacing: "-1px" }}>
+                Mis<span style={{ color: WC_COLORS.lime }}>Monas</span>
               </h1>
-              <p style={{ margin: 0, fontSize: "0.75em", opacity: 0.7, textTransform: "uppercase", letterSpacing: "1px" }}>Gestión de Coleccionistas 2026</p>
+              <p style={{ margin: 0, fontSize: "0.75em", opacity: 0.8, textTransform: "uppercase", letterSpacing: "1px" }}>Colección Oficial 2026</p>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "0.85em", fontWeight: "bold" }}>{usuario.email.split('@')[0]}</div>
-              {esAdmin && <span style={{ background: "#fee2e2", color: "#991b1b", padding: "1px 6px", borderRadius: "4px", fontSize: "0.65em", fontWeight: "bold" }}>ADMIN</span>}
+              {/* <-- AQUÍ MOSTRAMOS EL NOMBRE DEL USUARIO EN LUGAR DEL CORREO --> */}
+              <div style={{ fontSize: "0.9em", fontWeight: "bold", textTransform: "capitalize" }}>
+                {nombreUsuario || usuario.email.split('@')[0]}
+              </div>
+              {esAdmin && <span style={{ background: WC_COLORS.red, color: WC_COLORS.white, padding: "2px 8px", borderRadius: "4px", fontSize: "0.65em", fontWeight: "bold" }}>ADMIN</span>}
             </div>
             <button 
               onClick={() => signOut(auth)} 
@@ -107,18 +134,17 @@ function App() {
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL EN CONTENEDOR FLOTANTE */}
       <div style={{ maxWidth: "1100px", margin: "auto", padding: "0 20px" }}>
-        <div style={{ background: "white", marginTop: "-30px", padding: "25px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", marginBottom: "40px" }}>
+        <div style={{ background: "white", marginTop: "-20px", padding: "25px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", marginBottom: "40px" }}>
           
-          {/* NAVEGACIÓN RESPONSIVA */}
           <nav style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-            <button onClick={() => setPestaña('album')} style={estiloBoton('album')}>📖 Álbum</button>
+            <button onClick={() => setPestaña('album')} style={estiloBoton('album')}>📖 Mi Álbum</button>
+            <button onClick={() => setPestaña('progreso')} style={estiloBoton('progreso')}>📈 Progreso</button>
             <button onClick={() => setPestaña('trueques')} style={estiloBoton('trueques')}>🤝 Intercambio</button>
-            <button onClick={() => setPestaña('estadisticas')} style={estiloBoton('estadisticas')}>📊 Datos</button>
+            <button onClick={() => setPestaña('estadisticas')} style={estiloBoton('estadisticas')}>🌍 Mercado</button>
             {esAdmin && (
               <>
-                <button onClick={() => setPestaña('mapa')} style={{...estiloBoton('mapa'), border: "1.5px solid #002b5e"}}>📍 Mapa</button>
+                <button onClick={() => setPestaña('mapa')} style={{...estiloBoton('mapa'), border: `1.5px solid ${WC_COLORS.darkBlue}`}}>📍 Mapa</button>
                 <button onClick={() => setPestaña('admin')} style={estiloBoton('admin', true)}>🛡️ Admin</button>
               </>
             )}
@@ -126,6 +152,7 @@ function App() {
 
           <main style={{ minHeight: "400px" }}>
             {pestaña === 'album' && <Album usuario={usuario} />}
+            {pestaña === 'progreso' && <Progreso />}
             {pestaña === 'trueques' && <Trueques usuarioActual={usuario} />}
             {pestaña === 'estadisticas' && <Estadisticas />}
             {pestaña === 'mapa' && esAdmin && <MapaCiudades publicaciones={publicaciones} />}
@@ -135,7 +162,7 @@ function App() {
 
         <footer style={{ textAlign: "center", paddingBottom: "30px" }}>
           <p style={{ color: "#94a3b8", fontSize: "0.85em", margin: 0 }}>
-            <b>MISMONAS</b> © 2026 | Sistema de Gestión Nacional<br/>
+            <b>MisMonas</b> © 2026 | Sistema de Coleccionistas<br/>
             Desarrollado con ❤️ por Miguel Acevedo
           </p>
         </footer>
