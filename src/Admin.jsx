@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { 
-  doc, setDoc, updateDoc, increment, getDoc, 
+  doc, setDoc, updateDoc, getDoc, 
   collection, getDocs, deleteDoc 
 } from 'firebase/firestore';
 
@@ -190,16 +190,25 @@ export default function Admin() {
   const procesarTexto = (texto) => {
     const resultado = { faltantes: [], repetidas: [] };
     let modoActual = null;
+    
+    // Obtenemos los prefijos válidos de nuestra base de datos para ignorar URLs o basura
+    const prefijosValidos = seccionesAlbum.map(s => s.prefijo).filter(p => p !== "");
+
     texto.split('\n').forEach(linea => {
       const str = linea.trim().toLowerCase();
       if (!str) return;
       if (str.includes('faltan') || str.includes('busco')) { modoActual = 'faltantes'; return; }
       if (str.includes('repetida') || str.includes('tengo')) { modoActual = 'repetidas'; return; }
+      
       if (modoActual && linea.includes(':')) {
         const partes = linea.split(':');
         const matchPrefijo = partes[0].toUpperCase().match(/([A-Z]+)/);
         if (!matchPrefijo) return;
+        
         const prefijo = matchPrefijo[1];
+        // ESCUDO DE SEGURIDAD: Ignoramos cosas como "HTTPS"
+        if (!prefijosValidos.includes(prefijo) && prefijo !== "00") return;
+
         const numeros = partes[1].split(',').map(n => n.trim().replace(/[^0-9]/g, '')).filter(n => n !== '');
         numeros.forEach(num => {
           const codigoFinal = num === '00' ? '00' : `${prefijo}${num}`;
@@ -215,24 +224,61 @@ export default function Admin() {
     setProcesando(true);
     try {
       const datos = procesarTexto(textoLista);
+      
+      if (datos.faltantes.length === 0 && datos.repetidas.length === 0) {
+        setMensaje('⚠️ No se detectaron códigos válidos para el álbum en este texto.');
+        setProcesando(false);
+        return;
+      }
+
       const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
       const snap = await getDoc(mercadoRef);
-      if (!snap.exists()) await setDoc(mercadoRef, { faltantes: {}, repetidas: {}, total_listas_procesadas: 0 });
-
-      const actualizaciones = { total_listas_procesadas: increment(1) };
-      if (datos.faltantes.length > 0) {
-        datos.faltantes.forEach(c => { actualizaciones[`faltantes.${c}`] = increment(1); });
+      
+      let dataActual = { faltantes: {}, repetidas: {}, total_listas_procesadas: 0 };
+      if (snap.exists()) {
+        dataActual = snap.data();
+      } else {
+        await setDoc(mercadoRef, dataActual);
       }
+
+      // SOLUCIÓN AL LÍMITE DE FIREBASE: Sumamos en JS en lugar de usar increment()
+      const actualizaciones = { 
+        total_listas_procesadas: (dataActual.total_listas_procesadas || 0) + 1 
+      };
+
+      if (datos.faltantes.length > 0) {
+        datos.faltantes.forEach(c => { 
+          const cantidadAnterior = (dataActual.faltantes && dataActual.faltantes[c]) ? dataActual.faltantes[c] : 0;
+          if (actualizaciones[`faltantes.${c}`]) {
+              actualizaciones[`faltantes.${c}`]++;
+          } else {
+              actualizaciones[`faltantes.${c}`] = cantidadAnterior + 1;
+          }
+        });
+      }
+
       if (datos.repetidas.length > 0) {
-        datos.repetidas.forEach(c => { actualizaciones[`repetidas.${c}`] = increment(1); });
+        datos.repetidas.forEach(c => { 
+          const cantidadAnterior = (dataActual.repetidas && dataActual.repetidas[c]) ? dataActual.repetidas[c] : 0;
+          if (actualizaciones[`repetidas.${c}`]) {
+              actualizaciones[`repetidas.${c}`]++;
+          } else {
+              actualizaciones[`repetidas.${c}`] = cantidadAnterior + 1;
+          }
+        });
       }
 
       await updateDoc(mercadoRef, actualizaciones);
-      setMensaje('✅ Lista procesada con éxito.');
+      
+      setMensaje(`✅ Éxito: +${datos.faltantes.length} faltantes y +${datos.repetidas.length} repetidas sumadas al mercado.`);
       setTextoLista('');
       cargarDatosAdmin();
-    } catch (e) { setMensaje('❌ Error al procesar.'); }
-    finally { setProcesando(false); }
+    } catch (e) { 
+      console.error(e);
+      setMensaje('❌ Error al procesar: ' + e.message); 
+    } finally { 
+      setProcesando(false); 
+    }
   };
 
   const reiniciarMercado = async () => {
@@ -275,7 +321,7 @@ export default function Admin() {
 
       {mensaje && <p style={{ textAlign: "center", fontWeight: "bold", color: mensaje.includes('✅') || mensaje.includes('🗑️') ? "green" : "red" }}>{mensaje}</p>}
 
-      {/* SECCIÓN ACTUALIZADA: GESTIÓN DEL MURO */}
+      {/* GESTIÓN DEL MURO */}
       <div style={{ background: "white", border: "1px solid #ddd", borderRadius: "12px", marginBottom: "30px", overflow: "hidden" }}>
         <div style={{ background: "#E4002B", color: "white", padding: "12px", fontWeight: "bold" }}>📢 Gestión del Muro de Coleccionistas</div>
         <div style={{ maxHeight: "300px", overflowY: "auto", overflowX: "auto" }}>
@@ -319,6 +365,7 @@ export default function Admin() {
         </div>
       </div>
 
+      {/* GESTIÓN DE USUARIOS */}
       <div style={{ background: "white", border: "1px solid #ddd", borderRadius: "12px", marginBottom: "30px", overflow: "hidden" }}>
         <div style={{ background: "#00205B", color: "white", padding: "12px", fontWeight: "bold" }}>👥 Gestión de Usuarios Registrados</div>
         <div style={{ maxHeight: "250px", overflowY: "auto", overflowX: "auto" }}>
