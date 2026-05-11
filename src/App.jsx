@@ -85,7 +85,7 @@ function App() {
       
       {/* Balón de Fútbol Girando */}
       <img 
-        src="/balon-de-futbol.png" 
+        src="/icono-192.png" 
         alt="Cargando..." 
         style={{
           width: "90px", height: "90px", marginBottom: "25px",
