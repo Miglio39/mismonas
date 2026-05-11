@@ -162,8 +162,7 @@ function App() {
 
         <footer style={{ textAlign: "center", paddingBottom: "30px" }}>
           <p style={{ color: "#94a3b8", fontSize: "0.85em", margin: 0 }}>
-            <b>MisMonas</b> © 2026 | Sistema de Coleccionistas<br/>
-            Desarrollado con ❤️ por Miguel Acevedo
+            <b>MisMonas</b> © 2026 | Sistema de Coleccionistas<br/>            
           </p>
         </footer>
       </div>
