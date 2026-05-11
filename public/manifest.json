@@ -4,12 +4,12 @@
   "description": "Gestiona tu álbum del Mundial y encuentra coleccionistas para hacer trueques.",
   "icons": [
     {
-      "src": "/icono-192.png",
+      "src": "/balon-de-futbol.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/icono-512.png",
+      "src": "/balon-de-futbol.png",
       "type": "image/png",
       "sizes": "512x512"
     }
