@@ -12,7 +12,7 @@
   "lint": "eslint .",
   "preview": "vite preview",
   "start": "npx serve -s dist -l 3000"
-
+ 
   },
   "dependencies": {
     "firebase": "^12.13.0",
