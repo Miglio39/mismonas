@@ -155,6 +155,49 @@ function Estadisticas() {
     return { texto: "Escasa", color: "#fff", bg: WC_COLORS.lightBlue };
   };
 
+  const renderFilaMona = (mona, index, tipo) => {
+    const etiqueta = tipo === 'escasa' ? obtenerEtiquetaEscasa(index) : obtenerEtiquetaAbundante(index);
+    const esEspecial00 = mona.codigo === "00";
+    
+    return (
+      <div key={`${tipo}-${mona.codigo}`} style={{ 
+        display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", 
+        borderBottom: index === 9 ? "none" : "1px solid #f8fafc", gap: "10px",
+        background: esEspecial00 ? "linear-gradient(120deg, #fff 0%, #fef08a 50%, #fff 100%)" : "transparent"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", flex: "1", minWidth: 0, gap: "12px" }}>
+          <div style={{ width: "30px", flexShrink: 0, color: index < 3 ? (tipo === 'escasa' ? WC_COLORS.red : WC_COLORS.green) : "#94a3b8", fontWeight: "900", fontSize: "1.2em" }}>
+            #{index + 1}
+          </div>
+          {mona.bandera && (
+            <div style={{ 
+              width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              background: esEspecial00 ? "#fff" : "transparent", borderRadius: "4px", padding: esEspecial00 ? "2px" : "0",
+              boxShadow: esEspecial00 ? "0 0 8px rgba(250,204,21,0.6)" : "0 2px 4px rgba(0,0,0,0.1)"
+            }}>
+              <img src={mona.bandera} alt={mona.pais} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "2px" }} />
+            </div>
+          )}
+          <div style={{ 
+            fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.1em", 
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1" 
+          }}>
+            {mona.codigo}
+          </div>
+        </div>
+        <div style={{ flexShrink: 0 }}>
+          <span style={{ 
+            background: etiqueta.bg, color: etiqueta.color, fontSize: "0.7em", 
+            fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", 
+            textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" 
+          }}>
+            {etiqueta.texto}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "950px", margin: "auto", padding: "10px" }}>
       
@@ -175,9 +218,8 @@ function Estadisticas() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "30px" }}>
-        
         {/* COLUMNA 1: ESCASAS */}
-        <div style={{ flex: "1 1 350px", maxWidth: "100%", overflowX: "auto" }}>
+        <div style={{ flex: "1 1 350px", maxWidth: "100%", overflowX: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
             <div style={{ background: WC_COLORS.red, color: "white", padding: "10px", borderRadius: "12px", fontSize: "1.3em" }}>💎</div>
             <div>
@@ -185,44 +227,13 @@ function Estadisticas() {
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.85em" }}>Las que todo el mundo quiere.</p>
             </div>
           </div>
-
           <div style={{ background: "white", borderRadius: "16px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", overflow: "hidden", border: `2px solid ${WC_COLORS.red}` }}>
-            {topEscasas.map((mona, index) => {
-              const etiqueta = obtenerEtiquetaEscasa(index);
-              const esEspecial00 = mona.codigo === "00";
-              return (
-                <div key={`escasa-${mona.codigo}`} style={{ 
-                  display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", 
-                  borderBottom: index === 9 ? "none" : "1px solid #f8fafc", gap: "10px",
-                  background: esEspecial00 ? "linear-gradient(120deg, #fff 0%, #fef08a 50%, #fff 100%)" : "transparent"
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px", flex: 1 }}>
-                    <div style={{ width: "30px", color: index < 3 ? WC_COLORS.red : "#94a3b8", fontWeight: "900", fontSize: "1.3em", flexShrink: 0 }}>#{index + 1}</div>
-                    {mona.bandera && (
-                      <div style={{ 
-                        width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        background: esEspecial00 ? "#fff" : "transparent", borderRadius: "4px", padding: esEspecial00 ? "2px" : "0",
-                        boxShadow: esEspecial00 ? "0 0 8px rgba(250,204,21,0.6)" : "0 2px 4px rgba(0,0,0,0.1)"
-                      }}>
-                        <img src={mona.bandera} alt={mona.pais} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "2px" }} />
-                      </div>
-                    )}
-                    {/* ANCHO MÍNIMO PARA QUE NO SE PISE CON LA ETIQUETA */}
-                    <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.1em", minWidth: "80px", flexShrink: 0 }}>{mona.codigo}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
-                      {etiqueta.texto}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {topEscasas.map((mona, index) => renderFilaMona(mona, index, 'escasa'))}
           </div>
         </div>
 
         {/* COLUMNA 2: ABUNDANTES */}
-        <div style={{ flex: "1 1 350px", maxWidth: "100%", overflowX: "auto" }}>
+        <div style={{ flex: "1 1 350px", maxWidth: "100%", overflowX: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
             <div style={{ background: WC_COLORS.lime, color: WC_COLORS.darkBlue, padding: "10px", borderRadius: "12px", fontSize: "1.3em" }}>🔁</div>
             <div>
@@ -230,43 +241,10 @@ function Estadisticas() {
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.85em" }}>Las mejores para ofrecer en cambios.</p>
             </div>
           </div>
-
           <div style={{ background: "white", borderRadius: "16px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", overflow: "hidden", border: `2px solid ${WC_COLORS.green}` }}>
-            {topAbundantes.map((mona, index) => {
-              const etiqueta = obtenerEtiquetaAbundante(index);
-              const esEspecial00 = mona.codigo === "00";
-              return (
-                <div key={`abundante-${mona.codigo}`} style={{ 
-                  display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", 
-                  borderBottom: index === 9 ? "none" : "1px solid #f8fafc", gap: "10px",
-                  background: esEspecial00 ? "linear-gradient(120deg, #fff 0%, #fef08a 50%, #fff 100%)" : "transparent"
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px", flex: 1 }}>
-                    <div style={{ width: "30px", color: index < 3 ? WC_COLORS.green : "#94a3b8", fontWeight: "900", fontSize: "1.3em", flexShrink: 0 }}>#{index + 1}</div>
-                    {mona.bandera && (
-                      <div style={{ 
-                        width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        background: esEspecial00 ? "#fff" : "transparent", borderRadius: "4px", padding: esEspecial00 ? "2px" : "0",
-                        boxShadow: esEspecial00 ? "0 0 8px rgba(250,204,21,0.6)" : "0 2px 4px rgba(0,0,0,0.1)",
-                        filter: esEspecial00 ? "none" : "grayscale(15%)"
-                      }}>
-                        <img src={mona.bandera} alt={mona.pais} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "2px" }} />
-                      </div>
-                    )}
-                    {/* ANCHO MÍNIMO PARA QUE NO SE PISE CON LA ETIQUETA */}
-                    <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.1em", minWidth: "80px", flexShrink: 0 }}>{mona.codigo}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
-                      {etiqueta.texto}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {topAbundantes.map((mona, index) => renderFilaMona(mona, index, 'abundante'))}
           </div>
         </div>
-
       </div>
     </div>
   );
