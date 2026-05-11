@@ -72,8 +72,8 @@ function Estadisticas() {
           for (let i = seccion.inicio; i <= seccion.fin; i++) {
             let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
             conteoGlobal[codigo] = { 
-              registradas: 0, // Suma TOTAL de monas (usuarios + admin repetidas)
-              faltantes: 0,   // Suma de demanda (usuarios con 0 + admin faltantes)
+              registradas: 0, 
+              faltantes: 0,   
               bandera: seccion.bandera, 
               pais: seccion.nombre, 
               codigo 
@@ -81,36 +81,29 @@ function Estadisticas() {
           }
         });
 
-        // 1. Inyectamos los datos del ADMINISTRADOR (mercado_global)
         const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
         const adminSnap = await getDoc(mercadoRef);
         
         if (adminSnap.exists()) {
           const dataAdmin = adminSnap.data();
-          // Las repetidas del admin SUMAN al total de monas registradas
           Object.entries(dataAdmin.repetidas || {}).forEach(([codigo, cant]) => {
             if (conteoGlobal[codigo]) conteoGlobal[codigo].registradas += cant;
           });
-          // Las faltantes del admin SUMAN a la necesidad/demanda
           Object.entries(dataAdmin.faltantes || {}).forEach(([codigo, cant]) => {
             if (conteoGlobal[codigo]) conteoGlobal[codigo].faltantes += cant;
           });
         }
 
-        // 2. Sumamos los datos REALES DE LOS USUARIOS (inventarios)
         const inventariosRef = collection(db, "inventarios");
         const usuariosSnap = await getDocs(inventariosRef);
 
         usuariosSnap.forEach(docUsuario => {
           const inventario = docUsuario.data();
-          
           Object.keys(conteoGlobal).forEach(codigo => {
             const cantidadUsuario = inventario[codigo] || 0;
             if (cantidadUsuario > 0) {
-              // Regla de Oro: Sumar TODAS las copias que tenga el usuario
               conteoGlobal[codigo].registradas += cantidadUsuario;
             } else {
-              // Si tiene 0, sumamos 1 a la escasez/demanda
               conteoGlobal[codigo].faltantes += 1;
             }
           });
@@ -118,13 +111,10 @@ function Estadisticas() {
 
         const arregloEstadisticas = Object.values(conteoGlobal);
 
-        // TOP ABUNDANTES: Las que MÁS suma total de registradas tienen
         const abundantesFormateadas = [...arregloEstadisticas]
           .sort((a, b) => b.registradas - a.registradas)
           .slice(0, 10);
 
-        // TOP ESCASAS: Las que MENOS suma de registradas tienen. 
-        // Si hay empate (ej. ambas tienen 0), gana la que tenga más "faltantes".
         const escasasFormateadas = [...arregloEstadisticas]
           .sort((a, b) => {
             if (a.registradas === b.registradas) {
@@ -137,13 +127,11 @@ function Estadisticas() {
         setTopEscasas(escasasFormateadas);
         setTopAbundantes(abundantesFormateadas);
         setCargando(false);
-
       } catch (error) {
         console.error("Error al obtener estadísticas híbridas:", error);
         setCargando(false);
       }
     };
-
     generarEstadisticas();
   }, []);
 
@@ -172,24 +160,13 @@ function Estadisticas() {
       
       <div style={{ 
         background: `linear-gradient(135deg, ${WC_COLORS.darkBlue} 0%, ${WC_COLORS.lightBlue} 100%)`, 
-        color: "white", 
-        padding: "30px", 
-        borderRadius: "16px", 
-        marginBottom: "35px",
-        boxShadow: "0 10px 25px rgba(0, 32, 91, 0.2)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: "20px"
+        color: "white", padding: "30px", borderRadius: "16px", marginBottom: "35px",
+        boxShadow: "0 10px 25px rgba(0, 32, 91, 0.2)", display: "flex",
+        justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px"
       }}>
         <div>
-          <h2 style={{ margin: "0 0 5px 0", fontSize: "2em", fontWeight: "900",color: "#fff" }}>
-            Radar MisMonas
-          </h2>
-          <p style={{ margin: 0, color: "#fff", fontSize: "0.95em", opacity: 0.9 }}>
-            Descubre las tendencias del mercado global en tiempo real.
-          </p>
+          <h2 style={{ margin: "0 0 5px 0", fontSize: "2em", fontWeight: "900", color: "#fff" }}>Radar MisMonas</h2>
+          <p style={{ margin: 0, color: "#fff", fontSize: "0.95em", opacity: 0.9 }}>Descubre las tendencias del mercado global en tiempo real.</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.2)", padding: "10px 20px", borderRadius: "30px", border: "1px solid rgba(255,255,255,0.4)" }}>
           <span style={{ width: "10px", height: "10px", background: WC_COLORS.lime, borderRadius: "50%", boxShadow: `0 0 10px ${WC_COLORS.lime}` }}></span>
@@ -199,8 +176,8 @@ function Estadisticas() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "30px" }}>
         
-        {/* COLUMNA 1: ESCASAS (Más Buscadas / Faltantes) */}
-        <div style={{ flex: "1 1 350px" }}>
+        {/* COLUMNA 1: ESCASAS */}
+        <div style={{ flex: "1 1 350px", maxWidth: "100%", overflowX: "auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
             <div style={{ background: WC_COLORS.red, color: "white", padding: "10px", borderRadius: "12px", fontSize: "1.3em" }}>💎</div>
             <div>
@@ -213,30 +190,28 @@ function Estadisticas() {
             {topEscasas.map((mona, index) => {
               const etiqueta = obtenerEtiquetaEscasa(index);
               const esEspecial00 = mona.codigo === "00";
-
               return (
                 <div key={`escasa-${mona.codigo}`} style={{ 
                   display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", 
-                  borderBottom: index === 9 ? "none" : "1px solid #f8fafc",
+                  borderBottom: index === 9 ? "none" : "1px solid #f8fafc", gap: "10px",
                   background: esEspecial00 ? "linear-gradient(120deg, #fff 0%, #fef08a 50%, #fff 100%)" : "transparent"
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <div style={{ width: "30px", color: index < 3 ? WC_COLORS.red : "#94a3b8", fontWeight: "900", fontSize: "1.3em" }}>#{index + 1}</div>
-                    
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px", flex: 1 }}>
+                    <div style={{ width: "30px", color: index < 3 ? WC_COLORS.red : "#94a3b8", fontWeight: "900", fontSize: "1.3em", flexShrink: 0 }}>#{index + 1}</div>
                     {mona.bandera && (
                       <div style={{ 
-                        width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center",
+                        width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                         background: esEspecial00 ? "#fff" : "transparent", borderRadius: "4px", padding: esEspecial00 ? "2px" : "0",
                         boxShadow: esEspecial00 ? "0 0 8px rgba(250,204,21,0.6)" : "0 2px 4px rgba(0,0,0,0.1)"
                       }}>
                         <img src={mona.bandera} alt={mona.pais} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "2px" }} />
                       </div>
                     )}
-                    
-                    <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.2em", width: "50px" }}>{mona.codigo}</div>
+                    {/* ANCHO MÍNIMO PARA QUE NO SE PISE CON LA ETIQUETA */}
+                    <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.1em", minWidth: "80px", flexShrink: 0 }}>{mona.codigo}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
                       {etiqueta.texto}
                     </span>
                   </div>
@@ -246,11 +221,10 @@ function Estadisticas() {
           </div>
         </div>
 
-        {/* COLUMNA 2: ABUNDANTES (Más Ofrecidas / Repetidas) */}
-        <div style={{ flex: "1 1 350px" }}>
+        {/* COLUMNA 2: ABUNDANTES */}
+        <div style={{ flex: "1 1 350px", maxWidth: "100%", overflowX: "auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
             <div style={{ background: WC_COLORS.lime, color: WC_COLORS.darkBlue, padding: "10px", borderRadius: "12px", fontSize: "1.3em" }}>🔁</div>
-            
             <div>
               <h3 style={{ margin: 0, color: WC_COLORS.green, fontWeight: "900", fontSize: "1.4em" }}>Top 10 Repetidas</h3>
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.85em" }}>Las mejores para ofrecer en cambios.</p>
@@ -261,19 +235,17 @@ function Estadisticas() {
             {topAbundantes.map((mona, index) => {
               const etiqueta = obtenerEtiquetaAbundante(index);
               const esEspecial00 = mona.codigo === "00";
-
               return (
                 <div key={`abundante-${mona.codigo}`} style={{ 
                   display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", 
-                  borderBottom: index === 9 ? "none" : "1px solid #f8fafc",
+                  borderBottom: index === 9 ? "none" : "1px solid #f8fafc", gap: "10px",
                   background: esEspecial00 ? "linear-gradient(120deg, #fff 0%, #fef08a 50%, #fff 100%)" : "transparent"
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <div style={{ width: "30px", color: index < 3 ? WC_COLORS.green : "#94a3b8", fontWeight: "900", fontSize: "1.3em" }}>#{index + 1}</div>
-                    
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px", flex: 1 }}>
+                    <div style={{ width: "30px", color: index < 3 ? WC_COLORS.green : "#94a3b8", fontWeight: "900", fontSize: "1.3em", flexShrink: 0 }}>#{index + 1}</div>
                     {mona.bandera && (
                       <div style={{ 
-                        width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center",
+                        width: "35px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                         background: esEspecial00 ? "#fff" : "transparent", borderRadius: "4px", padding: esEspecial00 ? "2px" : "0",
                         boxShadow: esEspecial00 ? "0 0 8px rgba(250,204,21,0.6)" : "0 2px 4px rgba(0,0,0,0.1)",
                         filter: esEspecial00 ? "none" : "grayscale(15%)"
@@ -281,11 +253,11 @@ function Estadisticas() {
                         <img src={mona.bandera} alt={mona.pais} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "2px" }} />
                       </div>
                     )}
-
-                    <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.2em", width: "50px" }}>{mona.codigo}</div>
+                    {/* ANCHO MÍNIMO PARA QUE NO SE PISE CON LA ETIQUETA */}
+                    <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.1em", minWidth: "80px", flexShrink: 0 }}>{mona.codigo}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
                       {etiqueta.texto}
                     </span>
                   </div>
