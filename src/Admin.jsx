@@ -69,11 +69,43 @@ export default function Admin() {
   const [inventarioFull, setInventarioFull] = useState({});
   const [top10, setTop10] = useState({ faltantes: [], repetidas: [] });
   const [usuariosRegistrados, setUsuariosRegistrados] = useState([]);
+  const [publicacionesMuro, setPublicacionesMuro] = useState([]);
   const [busquedaGlobal, setBusquedaGlobal] = useState('');
 
   useEffect(() => {
     cargarDatosAdmin();
+    cargarMuro();
   }, []);
+
+  const cargarMuro = async () => {
+    try {
+      const muroRef = collection(db, 'publicaciones'); 
+      const snap = await getDocs(muroRef);
+      const posts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      posts.sort((a, b) => {
+        const timeA = a.fecha?.toMillis() || 0;
+        const timeB = b.fecha?.toMillis() || 0;
+        return timeB - timeA;
+      });
+      
+      setPublicacionesMuro(posts);
+    } catch (error) {
+      console.error("Error al cargar el muro:", error);
+    }
+  };
+
+  const eliminarPublicacionMuro = async (id) => {
+    if (window.confirm("⚠️ ¿Seguro que deseas eliminar esta publicación del muro de coleccionistas?")) {
+      try {
+        await deleteDoc(doc(db, "publicaciones", id)); 
+        setMensaje("🗑️ Publicación eliminada del muro.");
+        cargarMuro(); 
+      } catch (e) {
+        setMensaje("❌ Error al eliminar la publicación.");
+      }
+    }
+  };
 
   const cargarDatosAdmin = async () => {
     const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
@@ -81,18 +113,15 @@ export default function Admin() {
     const inventariosRef = collection(db, "inventarios");
     const inventariosSnap = await getDocs(inventariosRef);
 
-    // NUEVO: Buscar los nombres de los usuarios en la colección 'usuarios'
     let mapNombres = {};
     try {
-      // Ajusta 'usuarios' por 'users' si tu colección se llama diferente
       const usersSnap = await getDocs(collection(db, "usuarios")); 
       usersSnap.forEach(uDoc => {
         const data = uDoc.data();
-        // Toma el nombre, el displayName o el email, lo que encuentre primero
         mapNombres[uDoc.id] = data.nombre || data.displayName || data.email || "Sin Nombre";
       });
     } catch (e) {
-      console.log("No se encontró la colección de usuarios o faltan permisos.");
+      console.log("No se encontró la colección de usuarios.");
     }
 
     let conteoHibrido = {};
@@ -124,7 +153,7 @@ export default function Admin() {
       });
       listaU.push({ 
         id: docU.id, 
-        nombre: mapNombres[docU.id] || "Usuario Anónimo", // Inyectamos el nombre aquí
+        nombre: mapNombres[docU.id] || "Usuario Anónimo", 
         total: totalMonaUsuario 
       });
     });
@@ -216,13 +245,12 @@ export default function Admin() {
   return (
     <div style={{ maxWidth: "1000px", margin: "auto", padding: "20px", fontFamily: "sans-serif" }}>
       
-      {/* INDICADORES */}
-      <div style={{ display: "flex", gap: "15px", marginBottom: "20px" }}>
-        <div style={{ flex: 1, background: "#00205B", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+      <div style={{ display: "flex", gap: "15px", marginBottom: "20px", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 200px", background: "#00205B", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
           <span style={{ fontSize: "0.8em", opacity: 0.8 }}>Listas Admin</span>
           <div style={{ fontSize: "2em", fontWeight: "bold" }}>{totalListas}</div>
         </div>
-        <div style={{ flex: 1, background: "#00B140", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+        <div style={{ flex: "1 1 200px", background: "#00B140", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
           <span style={{ fontSize: "0.8em", opacity: 0.8 }}>Total Registros (Híbrido)</span>
           <div style={{ fontSize: "2em", fontWeight: "bold" }}>
             {Object.values(inventarioFull).reduce((a, b) => a + b, 0)}
@@ -238,19 +266,62 @@ export default function Admin() {
         style={{ width: "100%", padding: "15px", borderRadius: "8px", border: "2px solid #eee", marginBottom: "10px", fontSize: "16px", boxSizing: "border-box" }}
       />
       
-      <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
-        <button onClick={alimentarMercado} disabled={procesando} style={{ flex: 1, background: "#00B140", color: "white", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
+        <button onClick={alimentarMercado} disabled={procesando} style={{ flex: "1 1 200px", background: "#00B140", color: "white", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
           {procesando ? 'Procesando...' : '📥 Cargar Lista'}
         </button>
-        <button onClick={reiniciarMercado} style={{ background: "none", border: "1px solid #E4002B", color: "#E4002B", padding: "12px", borderRadius: "8px", cursor: "pointer" }}>🗑️ Reset</button>
+        <button onClick={reiniciarMercado} style={{ flex: "1 1 100px", background: "none", border: "1px solid #E4002B", color: "#E4002B", padding: "12px", borderRadius: "8px", cursor: "pointer" }}>🗑️ Reset</button>
       </div>
 
       {mensaje && <p style={{ textAlign: "center", fontWeight: "bold", color: mensaje.includes('✅') || mensaje.includes('🗑️') ? "green" : "red" }}>{mensaje}</p>}
 
-      {/* SECCIÓN NUEVA: GESTIÓN DE USUARIOS */}
+      {/* SECCIÓN ACTUALIZADA: GESTIÓN DEL MURO */}
+      <div style={{ background: "white", border: "1px solid #ddd", borderRadius: "12px", marginBottom: "30px", overflow: "hidden" }}>
+        <div style={{ background: "#E4002B", color: "white", padding: "12px", fontWeight: "bold" }}>📢 Gestión del Muro de Coleccionistas</div>
+        <div style={{ maxHeight: "300px", overflowY: "auto", overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#f1f5f9", textAlign: "left", fontSize: "0.85em" }}>
+                <th style={{ padding: "10px" }}>FECHA</th>
+                <th style={{ padding: "10px" }}>USUARIO</th>
+                <th style={{ padding: "10px" }}>UBICACIÓN</th>
+                <th style={{ padding: "10px", textAlign: "center" }}>ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              {publicacionesMuro.length === 0 ? (
+                <tr><td colSpan="4" style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>No hay publicaciones en el muro.</td></tr>
+              ) : (
+                publicacionesMuro.map(pub => (
+                  <tr key={pub.id} style={{ borderTop: "1px solid #eee" }}>
+                    <td style={{ padding: "10px", fontSize: "0.80em", color: "#64748b", whiteSpace: "nowrap" }}>
+                      {pub.fecha ? new Date(pub.fecha.toDate()).toLocaleString() : 'Reciente'}
+                    </td>
+                    <td style={{ padding: "10px", fontWeight: "bold", color: WC_COLORS.darkBlue, whiteSpace: "nowrap" }}>
+                      {pub.email ? pub.email.split('@')[0] : 'Anónimo'}
+                    </td>
+                    <td style={{ padding: "10px", fontSize: "0.85em", color: "#334155", whiteSpace: "nowrap" }}>
+                      📍 {pub.ciudad}, {pub.departamento}
+                    </td>
+                    <td style={{ padding: "10px", textAlign: "center" }}>
+                      <button 
+                        onClick={() => eliminarPublicacionMuro(pub.id)}
+                        style={{ background: "#fee2e2", color: "#ef4444", border: "none", padding: "6px 12px", borderRadius: "5px", cursor: "pointer", fontSize: "0.8em", fontWeight: "bold" }}
+                      >
+                        Borrar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div style={{ background: "white", border: "1px solid #ddd", borderRadius: "12px", marginBottom: "30px", overflow: "hidden" }}>
         <div style={{ background: "#00205B", color: "white", padding: "12px", fontWeight: "bold" }}>👥 Gestión de Usuarios Registrados</div>
-        <div style={{ maxHeight: "250px", overflowY: "auto" }}>
+        <div style={{ maxHeight: "250px", overflowY: "auto", overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f1f5f9", textAlign: "left", fontSize: "0.85em" }}>
@@ -263,7 +334,7 @@ export default function Admin() {
             <tbody>
               {usuariosRegistrados.map(u => (
                 <tr key={u.id} style={{ borderTop: "1px solid #eee" }}>
-                  <td style={{ padding: "10px", fontWeight: "bold", color: WC_COLORS.darkBlue }}>{u.nombre}</td>
+                  <td style={{ padding: "10px", fontWeight: "bold", color: WC_COLORS.darkBlue, whiteSpace: "nowrap" }}>{u.nombre}</td>
                   <td style={{ padding: "10px", fontSize: "0.80em", color: "#64748b" }}>{u.id}</td>
                   <td style={{ padding: "10px", fontWeight: "bold" }}>{u.total}</td>
                   <td style={{ padding: "10px", textAlign: "center" }}>
@@ -305,7 +376,7 @@ export default function Admin() {
       </div>
 
       <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 400px", background: "white", border: "1px solid #ddd", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ flex: "1 1 300px", maxWidth: "100%", background: "white", border: "1px solid #ddd", borderRadius: "12px", overflowX: "auto" }}>
           <div style={{ background: "#E4002B", color: "white", padding: "10px", fontWeight: "bold" }}>💎 Top 10 Buscadas (Admin)</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
@@ -315,7 +386,7 @@ export default function Admin() {
             </tbody>
           </table>
         </div>
-        <div style={{ flex: "1 1 400px", background: "white", border: "1px solid #ddd", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ flex: "1 1 300px", maxWidth: "100%", background: "white", border: "1px solid #ddd", borderRadius: "12px", overflowX: "auto" }}>
           <div style={{ background: "#00A3E0", color: "white", padding: "10px", fontWeight: "bold" }}>📦 Top 10 Repetidas (Admin)</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
