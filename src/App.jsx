@@ -65,12 +65,57 @@ function App() {
 
   useEffect(() => { if (usuario) cargarGlobal(); }, [usuario, pestaña]);
 
-  if (cargando) return (
-    <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: WC_COLORS.darkBlue, color: WC_COLORS.white, fontFamily: "sans-serif" }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: "3em", marginBottom: "10px" }}>⚽</div>
-        <h2 style={{ fontWeight: "900", letterSpacing: "2px" }}>CARGANDO MISMONAS...</h2>
-      </div>
+ if (cargando) return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+      background: "#16171d", /* Fondo oscuro base para alto contraste */
+      color: "white", display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", zIndex: 9999, fontFamily: "'Inter', sans-serif"
+    }}>
+      {/* Fondo de Estadio Difuminado */}
+      <img 
+        src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1974&auto=format&fit=crop" 
+        alt="Fondo Estadio" 
+        style={{
+          position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+          objectFit: "cover", opacity: 0.15, filter: "blur(5px)", 
+          zIndex: -1
+        }}
+      />
+      
+      {/* Balón de Fútbol Girando */}
+      <img 
+        src="/balon-de-futbol.png" 
+        alt="Cargando..." 
+        style={{
+          width: "90px", height: "90px", marginBottom: "25px",
+          animation: "giroSuave 2s linear infinite",
+          filter: "drop-shadow(0px 10px 15px rgba(0,0,0,0.5))" /* Sombra para que resalte más */
+        }}
+      />
+      
+      {/* Textos Claros y Legibles */}
+      <h2 style={{
+        margin: "0 0 10px 0", fontSize: "1.8em", fontWeight: "900",
+        letterSpacing: "1px", color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.8)" 
+      }}>
+        MisMonas 2026
+      </h2>
+      <p style={{
+        margin: 0, fontSize: "0.95em", color: WC_COLORS.lightBlue,
+        opacity: 0.9, letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold",
+        textShadow: "0 1px 3px rgba(0,0,0,0.8)"
+      }}>
+        Iniciando Plataforma...
+      </p>
+
+      {/* Animación inyectada directamente para que funcione sin tocar CSS extra */}
+      <style>{`
+        @keyframes giroSuave {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 
