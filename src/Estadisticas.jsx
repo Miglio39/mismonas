@@ -1,7 +1,7 @@
 // src/Estadisticas.jsx
 import { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
@@ -67,42 +67,79 @@ function Estadisticas() {
   useEffect(() => {
     const generarEstadisticas = async () => {
       try {
-        const inventariosRef = collection(db, "inventarios");
-        const snapshot = await getDocs(inventariosRef);
-
         const conteoGlobal = {};
         seccionesAlbum.forEach(seccion => {
           for (let i = seccion.inicio; i <= seccion.fin; i++) {
             let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
-            conteoGlobal[codigo] = { cantidad: 0, bandera: seccion.bandera, pais: seccion.nombre };
+            conteoGlobal[codigo] = { 
+              registradas: 0, // Suma TOTAL de monas (usuarios + admin repetidas)
+              faltantes: 0,   // Suma de demanda (usuarios con 0 + admin faltantes)
+              bandera: seccion.bandera, 
+              pais: seccion.nombre, 
+              codigo 
+            };
           }
         });
 
-        snapshot.forEach(doc => {
-          const inventario = doc.data();
-          for (const [codigo, cantidad] of Object.entries(inventario)) {
-            if (conteoGlobal[codigo] !== undefined) {
-              conteoGlobal[codigo].cantidad += cantidad;
+        // 1. Inyectamos los datos del ADMINISTRADOR (mercado_global)
+        const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
+        const adminSnap = await getDoc(mercadoRef);
+        
+        if (adminSnap.exists()) {
+          const dataAdmin = adminSnap.data();
+          // Las repetidas del admin SUMAN al total de monas registradas
+          Object.entries(dataAdmin.repetidas || {}).forEach(([codigo, cant]) => {
+            if (conteoGlobal[codigo]) conteoGlobal[codigo].registradas += cant;
+          });
+          // Las faltantes del admin SUMAN a la necesidad/demanda
+          Object.entries(dataAdmin.faltantes || {}).forEach(([codigo, cant]) => {
+            if (conteoGlobal[codigo]) conteoGlobal[codigo].faltantes += cant;
+          });
+        }
+
+        // 2. Sumamos los datos REALES DE LOS USUARIOS (inventarios)
+        const inventariosRef = collection(db, "inventarios");
+        const usuariosSnap = await getDocs(inventariosRef);
+
+        usuariosSnap.forEach(docUsuario => {
+          const inventario = docUsuario.data();
+          
+          Object.keys(conteoGlobal).forEach(codigo => {
+            const cantidadUsuario = inventario[codigo] || 0;
+            if (cantidadUsuario > 0) {
+              // Regla de Oro: Sumar TODAS las copias que tenga el usuario
+              conteoGlobal[codigo].registradas += cantidadUsuario;
+            } else {
+              // Si tiene 0, sumamos 1 a la escasez/demanda
+              conteoGlobal[codigo].faltantes += 1;
             }
-          }
+          });
         });
 
-        const arregloEstadisticas = Object.keys(conteoGlobal).map(codigo => ({
-          codigo,
-          cantidad: conteoGlobal[codigo].cantidad,
-          bandera: conteoGlobal[codigo].bandera,
-          pais: conteoGlobal[codigo].pais
-        }));
+        const arregloEstadisticas = Object.values(conteoGlobal);
 
-        const comunes = [...arregloEstadisticas].sort((a, b) => b.cantidad - a.cantidad).slice(0, 10);
-        const dificiles = [...arregloEstadisticas].sort((a, b) => a.cantidad - b.cantidad).slice(0, 10);
+        // TOP ABUNDANTES: Las que MÁS suma total de registradas tienen
+        const abundantesFormateadas = [...arregloEstadisticas]
+          .sort((a, b) => b.registradas - a.registradas)
+          .slice(0, 10);
 
-        setTopAbundantes(comunes);
-        setTopEscasas(dificiles);
+        // TOP ESCASAS: Las que MENOS suma de registradas tienen. 
+        // Si hay empate (ej. ambas tienen 0), gana la que tenga más "faltantes".
+        const escasasFormateadas = [...arregloEstadisticas]
+          .sort((a, b) => {
+            if (a.registradas === b.registradas) {
+              return b.faltantes - a.faltantes; 
+            }
+            return a.registradas - b.registradas;
+          })
+          .slice(0, 10);
+
+        setTopEscasas(escasasFormateadas);
+        setTopAbundantes(abundantesFormateadas);
         setCargando(false);
 
       } catch (error) {
-        console.error("Error al obtener estadísticas:", error);
+        console.error("Error al obtener estadísticas híbridas:", error);
         setCargando(false);
       }
     };
@@ -114,18 +151,18 @@ function Estadisticas() {
     <div style={{ textAlign: "center", marginTop: "80px", color: WC_COLORS.darkBlue }}>
       <div style={{ fontSize: "3em", marginBottom: "15px", animation: "spin 2s linear infinite" }}>🔄</div>
       <h3 style={{ margin: 0, fontWeight: "900" }}>Analizando MisMonas...</h3>
-      <p style={{ color: "#64748b", fontSize: "0.9em" }}>Buscando las láminas más deseadas</p>
+      <p style={{ color: "#64748b", fontSize: "0.9em" }}>Sincronizando Usuarios + Listas Admin</p>
     </div>
   );
 
   const obtenerEtiquetaAbundante = (index) => {
-    if (index === 0) return { texto: "Máxima Oferta", color: "#fff", bg: WC_COLORS.green }; 
+    if (index === 0) return { texto: "Máxima Oferta", color: "#fff", bg: WC_COLORS.green };
     if (index < 3) return { texto: "Alta Circulación", color: WC_COLORS.darkBlue, bg: WC_COLORS.lime };
     return { texto: "Común", color: "#fff", bg: WC_COLORS.lightBlue };
   };
 
   const obtenerEtiquetaEscasa = (index) => {
-    if (index === 0) return { texto: "Diamante", color: "#fff", bg: WC_COLORS.red }; 
+    if (index === 0) return { texto: "Diamante", color: "#fff", bg: WC_COLORS.red };
     if (index < 3) return { texto: "Muy Rara", color: "#fff", bg: WC_COLORS.darkBlue };
     return { texto: "Escasa", color: "#fff", bg: WC_COLORS.lightBlue };
   };
@@ -151,7 +188,7 @@ function Estadisticas() {
             Radar MisMonas
           </h2>
           <p style={{ margin: 0, color: "#fff", fontSize: "0.95em", opacity: 0.9 }}>
-            Descubre cuáles son las láminas más valiosas hoy.
+            Descubre las tendencias del mercado global en tiempo real.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.2)", padding: "10px 20px", borderRadius: "30px", border: "1px solid rgba(255,255,255,0.4)" }}>
@@ -162,7 +199,7 @@ function Estadisticas() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "30px" }}>
         
-        {/* COLUMNA 1: ESCASAS */}
+        {/* COLUMNA 1: ESCASAS (Más Buscadas / Faltantes) */}
         <div style={{ flex: "1 1 350px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
             <div style={{ background: WC_COLORS.red, color: "white", padding: "10px", borderRadius: "12px", fontSize: "1.3em" }}>💎</div>
@@ -198,7 +235,7 @@ function Estadisticas() {
                     
                     <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.2em", width: "50px" }}>{mona.codigo}</div>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
                     <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       {etiqueta.texto}
                     </span>
@@ -209,10 +246,11 @@ function Estadisticas() {
           </div>
         </div>
 
-        {/* COLUMNA 2: ABUNDANTES */}
+        {/* COLUMNA 2: ABUNDANTES (Más Ofrecidas / Repetidas) */}
         <div style={{ flex: "1 1 350px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
             <div style={{ background: WC_COLORS.lime, color: WC_COLORS.darkBlue, padding: "10px", borderRadius: "12px", fontSize: "1.3em" }}>🔁</div>
+            
             <div>
               <h3 style={{ margin: 0, color: WC_COLORS.green, fontWeight: "900", fontSize: "1.4em" }}>Top 10 Repetidas</h3>
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.85em" }}>Las mejores para ofrecer en cambios.</p>
@@ -246,7 +284,7 @@ function Estadisticas() {
 
                     <div style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.2em", width: "50px" }}>{mona.codigo}</div>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
                     <span style={{ background: etiqueta.bg, color: etiqueta.color, fontSize: "0.75em", fontWeight: "bold", padding: "6px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       {etiqueta.texto}
                     </span>

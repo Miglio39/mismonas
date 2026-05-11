@@ -117,7 +117,35 @@ function Album({ usuario }) {
     inputRef.current?.focus();
   };
 
-  // NUEVA FUNCIÓN: Generar texto agrupado por país y enviar por WhatsApp
+  // NUEVA FUNCIÓN: Marcar todas las monas de un equipo como obtenidas (solo las que faltan)
+  const llenarEquipo = async (seccion) => {
+    if (!window.confirm(`¿Estás seguro de marcar todo el equipo de ${seccion.nombre} como obtenido?`)) return;
+
+    const nuevoInventario = { ...inventario };
+    const actualizacionesDB = {};
+    let huboCambios = false;
+
+    // Recorremos las monas de esa sección
+    for (let i = seccion.inicio; i <= seccion.fin; i++) {
+      let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
+      
+      // Solo actualizamos si el usuario no tenía esta mona
+      if ((nuevoInventario[codigo] || 0) === 0) {
+        nuevoInventario[codigo] = 1;
+        actualizacionesDB[codigo] = 1;
+        huboCambios = true;
+      }
+    }
+
+    // Si hubo cambios, actualizamos el estado y la base de datos en una sola petición
+    if (huboCambios) {
+      setInventario(nuevoInventario);
+      const docRef = doc(db, "inventarios", usuario.uid);
+      await updateDoc(docRef, actualizacionesDB);
+    }
+  };
+
+  // Función original: Generar texto agrupado por país y enviar por WhatsApp
   const compartirWhatsApp = () => {
     let repetidasPorPais = [];
     let faltantesPorPais = [];
@@ -142,12 +170,10 @@ function Album({ usuario }) {
         }
       }
 
-      // Si hay repetidas en este país, agregamos la fila
       if (repetidasSeccion.length > 0) {
         repetidasPorPais.push(`🔸 *${seccion.nombre}:* ${repetidasSeccion.join(", ")}`);
       }
       
-      // Si hay faltantes en este país, agregamos la fila
       if (faltantesSeccion.length > 0) {
         faltantesPorPais.push(`🔹 *${seccion.nombre}:* ${faltantesSeccion.join(", ")}`);
       }
@@ -169,7 +195,6 @@ function Album({ usuario }) {
 
     mensaje += "👉 ¿Revisas si tienes alguna que me sirva o si te sirve alguna de las mías? ¡Hagamos trueque! ⚽";
 
-    // Codificar para URL y abrir WhatsApp
     const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
   };
@@ -295,10 +320,27 @@ function Album({ usuario }) {
 
           return (
             <div key={seccion.nombre} style={{ marginBottom: "20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", padding: "8px 12px", borderRadius: "8px", fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>
-                {seccion.bandera && <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "24px", borderRadius: "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />}
-                {seccion.nombre}
+              
+              {/* NUEVA CABECERA CON BOTÓN "LLENAR EQUIPO" */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f1f5f9", padding: "8px 12px", borderRadius: "8px", marginBottom: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>
+                  {seccion.bandera && <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "24px", borderRadius: "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />}
+                  {seccion.nombre}
+                </div>
+                <button
+                  onClick={() => llenarEquipo(seccion)}
+                  style={{
+                    background: WC_COLORS.green, color: "white", border: "none", borderRadius: "6px",
+                    padding: "6px 10px", cursor: "pointer", fontSize: "0.75em", fontWeight: "bold",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)", transition: "0.2s"
+                  }}
+                  title={`Marcar todas las de ${seccion.nombre} como obtenidas`}
+                >
+                  ✓ Llenar Equipo
+                </button>
               </div>
+              {/* FIN NUEVA CABECERA */}
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(85px, 1fr))", gap: "10px", padding: "10px 0" }}>
                 {monasVisibles.map(codigo => {
                   const cant = inventario[codigo] || 0;

@@ -1,45 +1,332 @@
 import { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { 
+  doc, setDoc, updateDoc, increment, getDoc, 
+  collection, getDocs, deleteDoc 
+} from 'firebase/firestore';
 
-function Admin() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [publicaciones, setPublicaciones] = useState([]);
+const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
-  const cargarAdmin = async () => {
-    const uSnap = await getDocs(collection(db, "inventarios")); // Usamos inventarios para ver usuarios activos
-    setUsuarios(uSnap.docs.map(d => ({ id: d.id })));
-    const pSnap = await getDocs(collection(db, "publicaciones"));
-    setPublicaciones(pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+const seccionesAlbum = [
+  { prefijo: "", nombre: "Especial Panini", inicio: 0, fin: 0 },
+  { prefijo: "FWC", nombre: "Especiales FIFA", inicio: 1, fin: 20 },
+  { prefijo: "USA", nombre: "Estados Unidos", inicio: 1, fin: 20 },
+  { prefijo: "MEX", nombre: "México", inicio: 1, fin: 20 },
+  { prefijo: "CAN", nombre: "Canadá", inicio: 1, fin: 20 },
+  { prefijo: "PAN", nombre: "Panamá", inicio: 1, fin: 20 },
+  { prefijo: "HAI", nombre: "Haití", inicio: 1, fin: 20 },
+  { prefijo: "CUW", nombre: "Curazao", inicio: 1, fin: 20 },
+  { prefijo: "ARG", nombre: "Argentina", inicio: 1, fin: 20 },
+  { prefijo: "BRA", nombre: "Brasil", inicio: 1, fin: 20 },
+  { prefijo: "COL", nombre: "Colombia", inicio: 1, fin: 20 },
+  { prefijo: "URU", nombre: "Uruguay", inicio: 1, fin: 20 },
+  { prefijo: "ECU", nombre: "Ecuador", inicio: 1, fin: 20 },
+  { prefijo: "PAR", nombre: "Paraguay", inicio: 1, fin: 20 },
+  { prefijo: "ESP", nombre: "España", inicio: 1, fin: 20 },
+  { prefijo: "ENG", nombre: "Inglaterra", inicio: 1, fin: 20 },
+  { prefijo: "FRA", nombre: "Francia", inicio: 1, fin: 20 },
+  { prefijo: "GER", nombre: "Alemania", inicio: 1, fin: 20 },
+  { prefijo: "POR", nombre: "Portugal", inicio: 1, fin: 20 },
+  { prefijo: "NED", nombre: "Países Bajos", inicio: 1, fin: 20 },
+  { prefijo: "CRO", nombre: "Croacia", inicio: 1, fin: 20 },
+  { prefijo: "BEL", nombre: "Bélgica", inicio: 1, fin: 20 },
+  { prefijo: "SUI", nombre: "Suiza", inicio: 1, fin: 20 },
+  { prefijo: "AUT", nombre: "Austria", inicio: 1, fin: 20 },
+  { prefijo: "TUR", nombre: "Turquía", inicio: 1, fin: 20 },
+  { prefijo: "BIH", nombre: "Bosnia", inicio: 1, fin: 20 },
+  { prefijo: "SCO", nombre: "Escocia", inicio: 1, fin: 20 },
+  { prefijo: "SWE", nombre: "Suecia", inicio: 1, fin: 20 },
+  { prefijo: "NOR", nombre: "Noruega", inicio: 1, fin: 20 },
+  { prefijo: "CZE", nombre: "República Checa", inicio: 1, fin: 20 },
+  { prefijo: "MAR", nombre: "Marruecos", inicio: 1, fin: 20 },
+  { prefijo: "SEN", nombre: "Senegal", inicio: 1, fin: 20 },
+  { prefijo: "EGY", nombre: "Egipto", inicio: 1, fin: 20 },
+  { prefijo: "CIV", nombre: "Costa de Marfil", inicio: 1, fin: 20 },
+  { prefijo: "ALG", nombre: "Argelia", inicio: 1, fin: 20 },
+  { prefijo: "GHA", nombre: "Ghana", inicio: 1, fin: 20 },
+  { prefijo: "RSA", nombre: "Sudáfrica", inicio: 1, fin: 20 },
+  { prefijo: "TUN", nombre: "Túnez", inicio: 1, fin: 20 },
+  { prefijo: "COD", nombre: "RD Congo", inicio: 1, fin: 20 },
+  { prefijo: "CPV", nombre: "Cabo Verde", inicio: 1, fin: 20 },
+  { prefijo: "JPN", nombre: "Japón", inicio: 1, fin: 20 },
+  { prefijo: "KOR", nombre: "Corea del Sur", inicio: 1, fin: 20 },
+  { prefijo: "IRN", nombre: "Irán", inicio: 1, fin: 20 },
+  { prefijo: "KSA", nombre: "Arabia Saudita", inicio: 1, fin: 20 },
+  { prefijo: "AUS", nombre: "Australia", inicio: 1, fin: 20 },
+  { prefijo: "QAT", nombre: "Qatar", inicio: 1, fin: 20 },
+  { prefijo: "IRQ", nombre: "Irak", inicio: 1, fin: 20 },
+  { prefijo: "JOR", nombre: "Jordania", inicio: 1, fin: 20 },
+  { prefijo: "UZB", nombre: "Uzbekistán", inicio: 1, fin: 20 },
+  { prefijo: "NZL", nombre: "Nueva Zelanda", inicio: 1, fin: 20 },
+  { prefijo: "CC", nombre: "Coca-Cola", inicio: 1, fin: 14 }
+];
+
+export default function Admin() {
+  const [textoLista, setTextoLista] = useState('');
+  const [procesando, setProcesando] = useState(false);
+  const [mensaje, setMensaje] = useState('');
+  const [totalListas, setTotalListas] = useState(0);
+  const [inventarioFull, setInventarioFull] = useState({});
+  const [top10, setTop10] = useState({ faltantes: [], repetidas: [] });
+  const [usuariosRegistrados, setUsuariosRegistrados] = useState([]);
+  const [busquedaGlobal, setBusquedaGlobal] = useState('');
+
+  useEffect(() => {
+    cargarDatosAdmin();
+  }, []);
+
+  const cargarDatosAdmin = async () => {
+    const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
+    const snap = await getDoc(mercadoRef);
+    const inventariosRef = collection(db, "inventarios");
+    const inventariosSnap = await getDocs(inventariosRef);
+
+    // NUEVO: Buscar los nombres de los usuarios en la colección 'usuarios'
+    let mapNombres = {};
+    try {
+      // Ajusta 'usuarios' por 'users' si tu colección se llama diferente
+      const usersSnap = await getDocs(collection(db, "usuarios")); 
+      usersSnap.forEach(uDoc => {
+        const data = uDoc.data();
+        // Toma el nombre, el displayName o el email, lo que encuentre primero
+        mapNombres[uDoc.id] = data.nombre || data.displayName || data.email || "Sin Nombre";
+      });
+    } catch (e) {
+      console.log("No se encontró la colección de usuarios o faltan permisos.");
+    }
+
+    let conteoHibrido = {};
+    let listaU = [];
+    
+    seccionesAlbum.forEach(seccion => {
+      for (let i = seccion.inicio; i <= seccion.fin; i++) {
+        let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
+        conteoHibrido[codigo] = 0;
+      }
+    });
+
+    if (snap.exists()) {
+      const data = snap.data();
+      setTotalListas(data.total_listas_procesadas || 0);
+      Object.entries(data.repetidas || {}).forEach(([cod, cant]) => {
+        if (conteoHibrido[cod] !== undefined) conteoHibrido[cod] += cant;
+      });
+    }
+
+    inventariosSnap.forEach(docU => {
+      const inv = docU.data();
+      let totalMonaUsuario = 0;
+      Object.entries(inv).forEach(([cod, cant]) => {
+        if (conteoHibrido[cod] !== undefined) {
+          conteoHibrido[cod] += cant;
+          totalMonaUsuario += cant;
+        }
+      });
+      listaU.push({ 
+        id: docU.id, 
+        nombre: mapNombres[docU.id] || "Usuario Anónimo", // Inyectamos el nombre aquí
+        total: totalMonaUsuario 
+      });
+    });
+
+    setInventarioFull(conteoHibrido);
+    setUsuariosRegistrados(listaU);
+
+    if (snap.exists()) {
+      const data = snap.data();
+      const ordenar = (obj) => Object.entries(obj || {})
+        .filter(([key]) => key !== 'total_listas_procesadas')
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      setTop10({
+        faltantes: ordenar(data.faltantes),
+        repetidas: ordenar(data.repetidas)
+      });
+    }
   };
 
-  useEffect(() => { cargarAdmin(); }, []);
+  const eliminarInventarioUsuario = async (uid, nombre) => {
+    if (window.confirm(`⚠️ ¿Eliminar el registro de "${nombre}" (${uid})? Esta acción borrará todas sus monas.`)) {
+      try {
+        await deleteDoc(doc(db, "inventarios", uid));
+        setMensaje(`🗑️ El inventario de ${nombre} ha sido eliminado.`);
+        cargarDatosAdmin();
+      } catch (e) {
+        setMensaje("❌ Error al eliminar usuario.");
+      }
+    }
+  };
+
+  const procesarTexto = (texto) => {
+    const resultado = { faltantes: [], repetidas: [] };
+    let modoActual = null;
+    texto.split('\n').forEach(linea => {
+      const str = linea.trim().toLowerCase();
+      if (!str) return;
+      if (str.includes('faltan') || str.includes('busco')) { modoActual = 'faltantes'; return; }
+      if (str.includes('repetida') || str.includes('tengo')) { modoActual = 'repetidas'; return; }
+      if (modoActual && linea.includes(':')) {
+        const partes = linea.split(':');
+        const matchPrefijo = partes[0].toUpperCase().match(/([A-Z]+)/);
+        if (!matchPrefijo) return;
+        const prefijo = matchPrefijo[1];
+        const numeros = partes[1].split(',').map(n => n.trim().replace(/[^0-9]/g, '')).filter(n => n !== '');
+        numeros.forEach(num => {
+          const codigoFinal = num === '00' ? '00' : `${prefijo}${num}`;
+          resultado[modoActual].push(codigoFinal);
+        });
+      }
+    });
+    return resultado;
+  };
+
+  const alimentarMercado = async () => {
+    if (!textoLista.trim()) return;
+    setProcesando(true);
+    try {
+      const datos = procesarTexto(textoLista);
+      const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
+      const snap = await getDoc(mercadoRef);
+      if (!snap.exists()) await setDoc(mercadoRef, { faltantes: {}, repetidas: {}, total_listas_procesadas: 0 });
+
+      const actualizaciones = { total_listas_procesadas: increment(1) };
+      if (datos.faltantes.length > 0) {
+        datos.faltantes.forEach(c => { actualizaciones[`faltantes.${c}`] = increment(1); });
+      }
+      if (datos.repetidas.length > 0) {
+        datos.repetidas.forEach(c => { actualizaciones[`repetidas.${c}`] = increment(1); });
+      }
+
+      await updateDoc(mercadoRef, actualizaciones);
+      setMensaje('✅ Lista procesada con éxito.');
+      setTextoLista('');
+      cargarDatosAdmin();
+    } catch (e) { setMensaje('❌ Error al procesar.'); }
+    finally { setProcesando(false); }
+  };
+
+  const reiniciarMercado = async () => {
+    if (window.confirm("⚠️ ¿Resetear mercado global?") && window.prompt("Escribe 'BORRAR TODO':") === "BORRAR TODO") {
+      await setDoc(doc(db, 'estadisticas', 'mercado_global'), { faltantes: {}, repetidas: {}, total_listas_procesadas: 0 });
+      cargarDatosAdmin();
+    }
+  };
 
   return (
-    <div style={{ padding: "10px" }}>
-      <h3 style={{ color: "#991b1b", borderBottom: "2px solid #fee2e2", paddingBottom: "10px" }}>🛡️ Panel de Moderación</h3>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "25px" }}>
-        <div style={{ background: "#fee2e2", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
-          <b style={{ fontSize: "0.9em" }}>Usuarios Registrados</b><br/><span style={{ fontSize: "2em", fontWeight: "bold" }}>{usuarios.length}</span>
+    <div style={{ maxWidth: "1000px", margin: "auto", padding: "20px", fontFamily: "sans-serif" }}>
+      
+      {/* INDICADORES */}
+      <div style={{ display: "flex", gap: "15px", marginBottom: "20px" }}>
+        <div style={{ flex: 1, background: "#00205B", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+          <span style={{ fontSize: "0.8em", opacity: 0.8 }}>Listas Admin</span>
+          <div style={{ fontSize: "2em", fontWeight: "bold" }}>{totalListas}</div>
         </div>
-        <div style={{ background: "#fef3c7", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
-          <b style={{ fontSize: "0.9em" }}>Anuncios Activos</b><br/><span style={{ fontSize: "2em", fontWeight: "bold" }}>{publicaciones.length}</span>
+        <div style={{ flex: 1, background: "#00B140", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+          <span style={{ fontSize: "0.8em", opacity: 0.8 }}>Total Registros (Híbrido)</span>
+          <div style={{ fontSize: "2em", fontWeight: "bold" }}>
+            {Object.values(inventarioFull).reduce((a, b) => a + b, 0)}
+          </div>
         </div>
       </div>
 
-      <h4>Gestionar Publicaciones</h4>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {publicaciones.map(p => (
-          <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #ddd" }}>
-            <div style={{ fontSize: "0.85em" }}>
-              <b>{p.email}</b> <span style={{ color: "#666" }}>({p.ciudad})</span>
-            </div>
-            <button onClick={async () => { if(confirm("¿Eliminar como Admin?")) { await deleteDoc(doc(db, "publicaciones", p.id)); cargarAdmin(); } }} style={{ background: "#ef4444", color: "white", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: "pointer", fontWeight: "bold" }}>Eliminar</button>
-          </div>
-        ))}
+      <textarea 
+        rows="5"
+        placeholder="Pega la lista de WhatsApp aquí..."
+        value={textoLista}
+        onChange={(e) => setTextoLista(e.target.value)}
+        style={{ width: "100%", padding: "15px", borderRadius: "8px", border: "2px solid #eee", marginBottom: "10px", fontSize: "16px", boxSizing: "border-box" }}
+      />
+      
+      <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
+        <button onClick={alimentarMercado} disabled={procesando} style={{ flex: 1, background: "#00B140", color: "white", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+          {procesando ? 'Procesando...' : '📥 Cargar Lista'}
+        </button>
+        <button onClick={reiniciarMercado} style={{ background: "none", border: "1px solid #E4002B", color: "#E4002B", padding: "12px", borderRadius: "8px", cursor: "pointer" }}>🗑️ Reset</button>
       </div>
+
+      {mensaje && <p style={{ textAlign: "center", fontWeight: "bold", color: mensaje.includes('✅') || mensaje.includes('🗑️') ? "green" : "red" }}>{mensaje}</p>}
+
+      {/* SECCIÓN NUEVA: GESTIÓN DE USUARIOS */}
+      <div style={{ background: "white", border: "1px solid #ddd", borderRadius: "12px", marginBottom: "30px", overflow: "hidden" }}>
+        <div style={{ background: "#00205B", color: "white", padding: "12px", fontWeight: "bold" }}>👥 Gestión de Usuarios Registrados</div>
+        <div style={{ maxHeight: "250px", overflowY: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#f1f5f9", textAlign: "left", fontSize: "0.85em" }}>
+                <th style={{ padding: "10px" }}>NOMBRE</th>
+                <th style={{ padding: "10px" }}>ID / UID</th>
+                <th style={{ padding: "10px" }}>TOTAL MONAS</th>
+                <th style={{ padding: "10px", textAlign: "center" }}>ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuariosRegistrados.map(u => (
+                <tr key={u.id} style={{ borderTop: "1px solid #eee" }}>
+                  <td style={{ padding: "10px", fontWeight: "bold", color: WC_COLORS.darkBlue }}>{u.nombre}</td>
+                  <td style={{ padding: "10px", fontSize: "0.80em", color: "#64748b" }}>{u.id}</td>
+                  <td style={{ padding: "10px", fontWeight: "bold" }}>{u.total}</td>
+                  <td style={{ padding: "10px", textAlign: "center" }}>
+                    <button 
+                      onClick={() => eliminarInventarioUsuario(u.id, u.nombre)}
+                      style={{ background: "#fee2e2", color: "#ef4444", border: "none", padding: "5px 10px", borderRadius: "5px", cursor: "pointer", fontSize: "0.8em", fontWeight: "bold" }}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ background: "#f8fafc", padding: "20px", borderRadius: "15px", border: "1px solid #e2e8f0", marginBottom: "30px" }}>
+        <h3 style={{ margin: "0 0 15px 0", color: "#00205B" }}>🔍 Inventario Global Detallado</h3>
+        <input 
+          type="text" 
+          placeholder="Busca cualquier mona (Ej: MEX1, FWC8...)" 
+          value={busquedaGlobal}
+          onChange={(e) => setBusquedaGlobal(e.target.value.toUpperCase())}
+          style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", marginBottom: "15px" }}
+        />
+        
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "10px", maxHeight: "300px", overflowY: "auto", padding: "5px" }}>
+          {Object.entries(inventarioFull)
+            .filter(([cod]) => cod.includes(busquedaGlobal))
+            .map(([cod, cant]) => (
+              <div key={cod} style={{ background: "white", padding: "8px", borderRadius: "8px", border: "1px solid #eee", textAlign: "center", fontSize: "0.85em" }}>
+                <b style={{ color: "#00205B" }}>{cod}</b>
+                <div style={{ color: cant > 0 ? WC_COLORS.green : "#94a3b8", fontWeight: "bold" }}>{cant} unid.</div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 400px", background: "white", border: "1px solid #ddd", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: "#E4002B", color: "white", padding: "10px", fontWeight: "bold" }}>💎 Top 10 Buscadas (Admin)</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <tbody>
+              {top10.faltantes.map(([cod, cant]) => (
+                <tr key={cod} style={{ borderTop: "1px solid #eee" }}><td style={{ padding: "10px" }}>{cod}</td><td style={{ textAlign: "right", padding: "10px", color: "#E4002B" }}><b>{cant} veces</b></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ flex: "1 1 400px", background: "white", border: "1px solid #ddd", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: "#00A3E0", color: "white", padding: "10px", fontWeight: "bold" }}>📦 Top 10 Repetidas (Admin)</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <tbody>
+              {top10.repetidas.map(([cod, cant]) => (
+                <tr key={cod} style={{ borderTop: "1px solid #eee" }}><td style={{ padding: "10px" }}>{cod}</td><td style={{ textAlign: "right", padding: "10px", color: "#00A3E0" }}><b>{cant} veces</b></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 }
-
-export default Admin;
