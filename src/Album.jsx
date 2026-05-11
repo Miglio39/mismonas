@@ -117,19 +117,15 @@ function Album({ usuario }) {
     inputRef.current?.focus();
   };
 
-  // NUEVA FUNCIÓN: Marcar todas las monas de un equipo como obtenidas (solo las que faltan)
   const llenarEquipo = async (seccion) => {
     if (!window.confirm(`¿Estás seguro de marcar todo el equipo de ${seccion.nombre} como obtenido?`)) return;
-
     const nuevoInventario = { ...inventario };
     const actualizacionesDB = {};
     let huboCambios = false;
 
-    // Recorremos las monas de esa sección
     for (let i = seccion.inicio; i <= seccion.fin; i++) {
       let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
       
-      // Solo actualizamos si el usuario no tenía esta mona
       if ((nuevoInventario[codigo] || 0) === 0) {
         nuevoInventario[codigo] = 1;
         actualizacionesDB[codigo] = 1;
@@ -137,7 +133,6 @@ function Album({ usuario }) {
       }
     }
 
-    // Si hubo cambios, actualizamos el estado y la base de datos en una sola petición
     if (huboCambios) {
       setInventario(nuevoInventario);
       const docRef = doc(db, "inventarios", usuario.uid);
@@ -145,7 +140,6 @@ function Album({ usuario }) {
     }
   };
 
-  // Función original: Generar texto agrupado por país y enviar por WhatsApp
   const compartirWhatsApp = () => {
     let repetidasPorPais = [];
     let faltantesPorPais = [];
@@ -224,9 +218,17 @@ function Album({ usuario }) {
     }
   });
 
+  // ESTILO MEJORADO PARA PESTAÑAS (Responsivo y Adaptable)
   const estiloPestana = (tipo) => ({
-    flex: 1, padding: "10px 5px", cursor: "pointer", border: "none", borderRadius: "8px",
-    fontSize: "0.85em", fontWeight: "bold", transition: "0.3s",
+    flex: "1 1 22%",
+    minWidth: "75px",
+    padding: "8px 2px", 
+    cursor: "pointer", 
+    border: "none", 
+    borderRadius: "8px",
+    fontSize: "clamp(0.7em, 2.5vw, 0.85em)", 
+    fontWeight: "bold", 
+    transition: "0.3s",
     background: filtroEstado === tipo ? WC_COLORS.darkBlue : "#f1f5f9",
     color: filtroEstado === tipo ? "white" : WC_COLORS.darkBlue
   });
@@ -266,19 +268,20 @@ function Album({ usuario }) {
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
           <div style={{ textAlign: "center", flex: 1 }}>
              <span style={{ fontSize: "0.8em", opacity: 0.9, letterSpacing: "1px", textTransform: "uppercase" }}>Faltan</span>
-             <b style={{ display: "block", fontSize: "2em", color: WC_COLORS.red }}>{faltan}</b>
+             <b style={{ display: "block", fontSize: "clamp(1.2em, 6vw, 2em)", color: WC_COLORS.red }}>{faltan}</b>
           </div>
           <div style={{ textAlign: "center", flex: 1, borderLeft: "1px solid rgba(255,255,255,0.1)", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
              <span style={{ fontSize: "0.8em", opacity: 0.9, letterSpacing: "1px", textTransform: "uppercase" }}>Llevo</span>
-             <b style={{ display: "block", fontSize: "2em", color: WC_COLORS.green }}>{llevo}</b>
+             <b style={{ display: "block", fontSize: "clamp(1.2em, 6vw, 2em)", color: WC_COLORS.green }}>{llevo}</b>
           </div>
           <div style={{ textAlign: "center", flex: 1 }}>
              <span style={{ fontSize: "0.8em", opacity: 0.9, letterSpacing: "1px", textTransform: "uppercase" }}>Repetidas</span>
-             <b style={{ display: "block", fontSize: "2em", color: WC_COLORS.lightBlue }}>{repetidasTotales}</b>
+             <b style={{ display: "block", fontSize: "clamp(1.2em, 6vw, 2em)", color: WC_COLORS.lightBlue }}>{repetidasTotales}</b>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "5px", background: "rgba(255,255,255,0.1)", padding: "5px", borderRadius: "10px" }}>
+        {/* CONTENEDOR DE BOTONES CON FLEXWRAP PARA MÓVILES */}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "5px", background: "rgba(255,255,255,0.1)", padding: "5px", borderRadius: "10px" }}>
           <button onClick={() => setFiltroEstado('todas')} style={estiloPestana('todas')}>Ver Todas</button>
           <button onClick={() => setFiltroEstado('faltan')} style={estiloPestana('faltan')}>Faltantes</button>
           <button onClick={() => setFiltroEstado('llevo')} style={estiloPestana('llevo')}>Obtenidas</button>
@@ -327,6 +330,7 @@ function Album({ usuario }) {
                   {seccion.bandera && <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "24px", borderRadius: "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />}
                   {seccion.nombre}
                 </div>
+                
                 <button
                   onClick={() => llenarEquipo(seccion)}
                   style={{
