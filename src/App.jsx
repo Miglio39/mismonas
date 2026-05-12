@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore'; // Importamos doc y getDoc
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
+
 import Login from './Login';
 import Album from './Album';
 import Trueques from './Trueques';
@@ -10,6 +11,7 @@ import Estadisticas from './Estadisticas';
 import Progreso from './Progreso';
 import MapaCiudades from './MapaCiudades';
 import Admin from './Admin';
+import PvP from './PvP';
 
 // COLORES OFICIALES MUNDIAL 2026
 const WC_COLORS = {
@@ -23,7 +25,7 @@ const WC_COLORS = {
 
 function App() {
   const [usuario, setUsuario] = useState(null);
-  const [nombreUsuario, setNombreUsuario] = useState(''); // <-- NUEVO ESTADO PARA EL NOMBRE
+  const [nombreUsuario, setNombreUsuario] = useState('');
   const [pestaña, setPestaña] = useState('album');
   const [publicaciones, setPublicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -36,11 +38,9 @@ function App() {
       setUsuario(user);
       
       if (user) {
-        // <-- NUEVA LÓGICA: Buscar el nombre del usuario en Firestore
         try {
           const userDoc = await getDoc(doc(db, "usuarios", user.uid));
           if (userDoc.exists() && userDoc.data().nombre) {
-            // Juntamos el nombre y el apellido
             setNombreUsuario(`${userDoc.data().nombre} ${userDoc.data().apellido || ''}`.trim());
           }
         } catch (error) {
@@ -68,11 +68,10 @@ function App() {
  if (cargando) return (
     <div style={{
       position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-      background: "#16171d", /* Fondo oscuro base para alto contraste */
+      background: "#16171d", 
       color: "white", display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", zIndex: 9999, fontFamily: "'Inter', sans-serif"
     }}>
-      {/* Fondo de Estadio Difuminado */}
       <img 
         src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1974&auto=format&fit=crop" 
         alt="Fondo Estadio" 
@@ -83,18 +82,16 @@ function App() {
         }}
       />
       
-      {/* Balón de Fútbol Girando */}
       <img 
         src="/icono-192.png" 
         alt="Cargando..." 
         style={{
           width: "90px", height: "90px", marginBottom: "25px",
           animation: "giroSuave 2s linear infinite",
-          filter: "drop-shadow(0px 10px 15px rgba(0,0,0,0.5))" /* Sombra para que resalte más */
+          filter: "drop-shadow(0px 10px 15px rgba(0,0,0,0.5))"
         }}
       />
-      
-      {/* Textos Claros y Legibles */}
+     
       <h2 style={{
         margin: "0 0 10px 0", fontSize: "1.8em", fontWeight: "900",
         letterSpacing: "1px", color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.8)" 
@@ -109,7 +106,6 @@ function App() {
         Iniciando Plataforma...
       </p>
 
-      {/* Animación inyectada directamente para que funcione sin tocar CSS extra */}
       <style>{`
         @keyframes giroSuave {
           0% { transform: rotate(0deg); }
@@ -161,7 +157,6 @@ function App() {
 
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <div style={{ textAlign: "right" }}>
-              {/* <-- AQUÍ MOSTRAMOS EL NOMBRE DEL USUARIO EN LUGAR DEL CORREO --> */}
               <div style={{ fontSize: "0.9em", fontWeight: "bold", textTransform: "capitalize" }}>
                 {nombreUsuario || usuario.email.split('@')[0]}
               </div>
@@ -187,6 +182,10 @@ function App() {
             <button onClick={() => setPestaña('progreso')} style={estiloBoton('progreso')}>📈 Progreso</button>
             <button onClick={() => setPestaña('trueques')} style={estiloBoton('trueques')}>🤝 Intercambio</button>
             <button onClick={() => setPestaña('estadisticas')} style={estiloBoton('estadisticas')}>🌍 Mercado</button>
+            
+            {/* AQUÍ ESTÁ EL BOTÓN CORREGIDO */}
+            <button onClick={() => setPestaña('pvp')} style={estiloBoton('pvp')}>🤝 PvP</button>
+
             {esAdmin && (
               <>
                 <button onClick={() => setPestaña('mapa')} style={{...estiloBoton('mapa'), border: `1.5px solid ${WC_COLORS.darkBlue}`}}>📍 Mapa</button>
@@ -200,6 +199,10 @@ function App() {
             {pestaña === 'progreso' && <Progreso />}
             {pestaña === 'trueques' && <Trueques usuarioActual={usuario} />}
             {pestaña === 'estadisticas' && <Estadisticas />}
+            
+            {/* AQUÍ ESTÁ LA LÍNEA PARA MOSTRAR EL MÓDULO PVP */}
+            {pestaña === 'pvp' && <PvP usuario={usuario} />}
+            
             {pestaña === 'mapa' && esAdmin && <MapaCiudades publicaciones={publicaciones} />}
             {pestaña === 'admin' && esAdmin && <Admin />}
           </main>
