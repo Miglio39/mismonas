@@ -67,13 +67,15 @@ function Estadisticas() {
   useEffect(() => {
    const generarEstadisticas = async () => {
       try {
-        const conteoGlobal = {};
+        const mercado = {};
+        
+        // 1. Preparamos el terreno
         seccionesAlbum.forEach(seccion => {
           for (let i = seccion.inicio; i <= seccion.fin; i++) {
             let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
-            conteoGlobal[codigo] = { 
-              registradas: 0, 
-              faltantes: 0,   
+            mercado[codigo] = { 
+              oferta: 0, 
+              demanda: 0,   
               bandera: seccion.bandera, 
               pais: seccion.nombre, 
               codigo 
@@ -81,73 +83,62 @@ function Estadisticas() {
           }
         });
 
-        // 1. Inyectamos los datos del ADMINISTRADOR (mercado_global)
+        // 2. Sumamos los datos MANUALES DEL ADMIN (Lo que se ve en redes sociales)
         const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
         const adminSnap = await getDoc(mercadoRef);
         
         if (adminSnap.exists()) {
           const dataAdmin = adminSnap.data();
-          const totalListasAdmin = dataAdmin.total_listas_procesadas || 0;
           
-          // --- MAGIA MATEMÁTICA: DEDUCCIÓN DEL ÁLBUM ---
-          
-          // PASO A: Asumimos que la lista procesada tiene al menos 1 copia (la pegada)
-          Object.keys(conteoGlobal).forEach(codigo => {
-            conteoGlobal[codigo].registradas += totalListasAdmin;
-          });
-
-          // PASO B: Restamos las faltantes (porque tienen 0 copias, no 1)
+          // Solo sumamos la DEMANDA explícita (Las que piden)
           Object.entries(dataAdmin.faltantes || {}).forEach(([codigo, cant]) => {
-            if (conteoGlobal[codigo]) {
-                conteoGlobal[codigo].faltantes += cant; // Suma a la demanda global
-                conteoGlobal[codigo].registradas -= cant; // Ajuste: No la tienen pegada
-            }
+            if (mercado[codigo]) mercado[codigo].demanda += cant;
           });
 
-          // PASO C: Sumamos la copia extra de las repetidas (Tienen 2: la pegada + la extra)
+          // Solo sumamos la OFERTA explícita (Las que ofrecen)
           Object.entries(dataAdmin.repetidas || {}).forEach(([codigo, cant]) => {
-            if (conteoGlobal[codigo]) {
-                conteoGlobal[codigo].registradas += cant; // Suma la copia extra
-            }
+            if (mercado[codigo]) mercado[codigo].oferta += cant;
           });
         }
 
-        // 2. Sumamos los datos REALES DE LOS USUARIOS REGISTRADOS (inventarios)
+        // 3. Sumamos los datos EXACTOS DE LOS USUARIOS DE LA APP
         const inventariosRef = collection(db, "inventarios");
         const usuariosSnap = await getDocs(inventariosRef);
 
         usuariosSnap.forEach(docUsuario => {
           const inventario = docUsuario.data();
-          Object.keys(conteoGlobal).forEach(codigo => {
+          Object.keys(mercado).forEach(codigo => {
             const cantidadUsuario = inventario[codigo] || 0;
-            if (cantidadUsuario > 0) {
-              conteoGlobal[codigo].registradas += cantidadUsuario;
-            } else {
-              conteoGlobal[codigo].faltantes += 1;
+            
+            if (cantidadUsuario === 0) {
+              mercado[codigo].demanda += 1; // Al usuario le falta, suma a la demanda
+            } else if (cantidadUsuario > 1) {
+              mercado[codigo].oferta += (cantidadUsuario - 1); // Cuántas tiene para dar (Oferta real)
             }
           });
         });
 
-        const arregloEstadisticas = Object.values(conteoGlobal);
+        // 4. Calculamos el Balance (Oferta - Demanda)
+        const arregloEstadisticas = Object.values(mercado).map(item => ({
+          ...item,
+          balance: item.oferta - item.demanda
+        }));
 
+        // LAS MÁS ABUNDANTES: Las que tienen el balance positivo más alto
         const abundantesFormateadas = [...arregloEstadisticas]
-          .sort((a, b) => b.registradas - a.registradas)
+          .sort((a, b) => b.balance - a.balance)
           .slice(0, 10);
 
+        // LAS MÁS ESCASAS: Las que tienen el balance negativo más bajo
         const escasasFormateadas = [...arregloEstadisticas]
-          .sort((a, b) => {
-            if (a.registradas === b.registradas) {
-              return b.faltantes - a.faltantes; 
-            }
-            return a.registradas - b.registradas;
-          })
+          .sort((a, b) => a.balance - b.balance)
           .slice(0, 10);
 
         setTopEscasas(escasasFormateadas);
         setTopAbundantes(abundantesFormateadas);
         setCargando(false);
       } catch (error) {
-        console.error("Error al obtener estadísticas híbridas:", error);
+        console.error("Error al obtener estadísticas de mercado:", error);
         setCargando(false);
       }
     };
