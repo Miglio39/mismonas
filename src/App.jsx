@@ -73,7 +73,7 @@ function App() {
       justifyContent: "center", zIndex: 9999, fontFamily: "'Inter', sans-serif"
     }}>
       <img 
-        src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1974&auto=format&fit=crop" 
+        src="/estadio.jpg" 
         alt="Fondo Estadio" 
         style={{
           position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
