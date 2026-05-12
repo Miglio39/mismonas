@@ -65,7 +65,7 @@ function Estadisticas() {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    const generarEstadisticas = async () => {
+   const generarEstadisticas = async () => {
       try {
         const conteoGlobal = {};
         seccionesAlbum.forEach(seccion => {
@@ -75,24 +75,44 @@ function Estadisticas() {
               registradas: 0, 
               faltantes: 0,   
               bandera: seccion.bandera, 
+              pais: seccion.nombre, 
               codigo 
             };
           }
         });
 
+        // 1. Inyectamos los datos del ADMINISTRADOR (mercado_global)
         const mercadoRef = doc(db, 'estadisticas', 'mercado_global');
         const adminSnap = await getDoc(mercadoRef);
         
         if (adminSnap.exists()) {
           const dataAdmin = adminSnap.data();
-          Object.entries(dataAdmin.repetidas || {}).forEach(([codigo, cant]) => {
-            if (conteoGlobal[codigo]) conteoGlobal[codigo].registradas += cant;
+          const totalListasAdmin = dataAdmin.total_listas_procesadas || 0;
+          
+          // --- MAGIA MATEMÁTICA: DEDUCCIÓN DEL ÁLBUM ---
+          
+          // PASO A: Asumimos que la lista procesada tiene al menos 1 copia (la pegada)
+          Object.keys(conteoGlobal).forEach(codigo => {
+            conteoGlobal[codigo].registradas += totalListasAdmin;
           });
+
+          // PASO B: Restamos las faltantes (porque tienen 0 copias, no 1)
           Object.entries(dataAdmin.faltantes || {}).forEach(([codigo, cant]) => {
-            if (conteoGlobal[codigo]) conteoGlobal[codigo].faltantes += cant;
+            if (conteoGlobal[codigo]) {
+                conteoGlobal[codigo].faltantes += cant; // Suma a la demanda global
+                conteoGlobal[codigo].registradas -= cant; // Ajuste: No la tienen pegada
+            }
+          });
+
+          // PASO C: Sumamos la copia extra de las repetidas (Tienen 2: la pegada + la extra)
+          Object.entries(dataAdmin.repetidas || {}).forEach(([codigo, cant]) => {
+            if (conteoGlobal[codigo]) {
+                conteoGlobal[codigo].registradas += cant; // Suma la copia extra
+            }
           });
         }
 
+        // 2. Sumamos los datos REALES DE LOS USUARIOS REGISTRADOS (inventarios)
         const inventariosRef = collection(db, "inventarios");
         const usuariosSnap = await getDocs(inventariosRef);
 

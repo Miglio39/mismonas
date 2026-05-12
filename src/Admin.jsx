@@ -136,9 +136,20 @@ export default function Admin() {
 
     if (snap.exists()) {
       const data = snap.data();
-      setTotalListas(data.total_listas_procesadas || 0);
+      const listasAdmin = data.total_listas_procesadas || 0;
+      setTotalListas(listasAdmin);
+      
+      // DEDUCCIÓN LÓGICA DE LISTAS DE ADMIN
+      Object.keys(conteoHibrido).forEach(cod => {
+        conteoHibrido[cod] += listasAdmin; // Asume 1 copia pegada
+      });
+
+      Object.entries(data.faltantes || {}).forEach(([cod, cant]) => {
+        if (conteoHibrido[cod] !== undefined) conteoHibrido[cod] -= cant; // Resta porque no la tiene
+      });
+
       Object.entries(data.repetidas || {}).forEach(([cod, cant]) => {
-        if (conteoHibrido[cod] !== undefined) conteoHibrido[cod] += cant;
+        if (conteoHibrido[cod] !== undefined) conteoHibrido[cod] += cant; // Suma la copia extra
       });
     }
 
