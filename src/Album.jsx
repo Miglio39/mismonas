@@ -8,54 +8,54 @@ const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0",
 const seccionesAlbum = [
   { prefijo: "", nombre: "Especial Panini", bandera: "/logo_panini_especial.png", inicio: 0, fin: 0 },
   { prefijo: "FWC", nombre: "Especiales FIFA", bandera: "https://upload.wikimedia.org/wikipedia/commons/a/aa/FIFA_logo_without_slogan.svg", inicio: 1, fin: 20 },
-  { prefijo: "MEX", nombre: "México", bandera: "https://flagcdn.com/w40/mx.png", inicio: 1, fin: 20 },
-  { prefijo: "RSA", nombre: "Sudáfrica", bandera: "https://flagcdn.com/w40/za.png", inicio: 1, fin: 20 },
-  { prefijo: "KOR", nombre: "Corea del Sur", bandera: "https://flagcdn.com/w40/kr.png", inicio: 1, fin: 20 },
-  { prefijo: "CZE", nombre: "República Checa", bandera: "https://flagcdn.com/w40/cz.png", inicio: 1, fin: 20 },
-  { prefijo: "CAN", nombre: "Canadá", bandera: "https://flagcdn.com/w40/ca.png", inicio: 1, fin: 20 },
-  { prefijo: "BIH", nombre: "Bosnia", bandera: "https://flagcdn.com/w40/ba.png", inicio: 1, fin: 20 },
-  { prefijo: "QAT", nombre: "Qatar", bandera: "https://flagcdn.com/w40/qa.png", inicio: 1, fin: 20 },
-  { prefijo: "SUI", nombre: "Suiza", bandera: "https://flagcdn.com/w40/ch.png", inicio: 1, fin: 20 },
-  { prefijo: "BRA", nombre: "Brasil", bandera: "https://flagcdn.com/w40/br.png", inicio: 1, fin: 20 },
-  { prefijo: "MAR", nombre: "Marruecos", bandera: "https://flagcdn.com/w40/ma.png", inicio: 1, fin: 20 },
-  { prefijo: "HAI", nombre: "Haití", bandera: "https://flagcdn.com/w40/ht.png", inicio: 1, fin: 20 },
-  { prefijo: "SCO", nombre: "Escocia", bandera: "https://flagcdn.com/w40/gb-sct.png", inicio: 1, fin: 20 },
   { prefijo: "USA", nombre: "Estados Unidos", bandera: "https://flagcdn.com/w40/us.png", inicio: 1, fin: 20 },
-  { prefijo: "PAR", nombre: "Paraguay", bandera: "https://flagcdn.com/w40/py.png", inicio: 1, fin: 20 },
-  { prefijo: "AUS", nombre: "Australia", bandera: "https://flagcdn.com/w40/au.png", inicio: 1, fin: 20 },
-  { prefijo: "TUR", nombre: "Turquía", bandera: "https://flagcdn.com/w40/tr.png", inicio: 1, fin: 20 },
-  { prefijo: "GER", nombre: "Alemania", bandera: "https://flagcdn.com/w40/de.png", inicio: 1, fin: 20 },
-  { prefijo: "CUW", nombre: "Curazao", bandera: "https://flagcdn.com/w40/cw.png", inicio: 1, fin: 20 },
-  { prefijo: "CIV", nombre: "Costa de Marfil", bandera: "https://flagcdn.com/w40/ci.png", inicio: 1, fin: 20 },
-  { prefijo: "ECU", nombre: "Ecuador", bandera: "https://flagcdn.com/w40/ec.png", inicio: 1, fin: 20 },
-  { prefijo: "NED", nombre: "Países Bajos", bandera: "https://flagcdn.com/w40/nl.png", inicio: 1, fin: 20 },
-  { prefijo: "JPN", nombre: "Japón", bandera: "https://flagcdn.com/w40/jp.png", inicio: 1, fin: 20 },
-  { prefijo: "SWE", nombre: "Suecia", bandera: "https://flagcdn.com/w40/se.png", inicio: 1, fin: 20 },
-  { prefijo: "TUN", nombre: "Túnez", bandera: "https://flagcdn.com/w40/tn.png", inicio: 1, fin: 20 },
-  { prefijo: "BEL", nombre: "Bélgica", bandera: "https://flagcdn.com/w40/be.png", inicio: 1, fin: 20 },
-  { prefijo: "EGY", nombre: "Egipto", bandera: "https://flagcdn.com/w40/eg.png", inicio: 1, fin: 20 },
-  { prefijo: "IRN", nombre: "Irán", bandera: "https://flagcdn.com/w40/ir.png", inicio: 1, fin: 20 },
-  { prefijo: "NZL", nombre: "Nueva Zelanda", bandera: "https://flagcdn.com/w40/nz.png", inicio: 1, fin: 20 },
-  { prefijo: "ESP", nombre: "España", bandera: "https://flagcdn.com/w40/es.png", inicio: 1, fin: 20 },
-  { prefijo: "CPV", nombre: "Cabo Verde", bandera: "https://flagcdn.com/w40/cv.png", inicio: 1, fin: 20 },
-  { prefijo: "KSA", nombre: "Arabia Saudita", bandera: "https://flagcdn.com/w40/sa.png", inicio: 1, fin: 20 },
-  { prefijo: "URU", nombre: "Uruguay", bandera: "https://flagcdn.com/w40/uy.png", inicio: 1, fin: 20 },
-  { prefijo: "FRA", nombre: "Francia", bandera: "https://flagcdn.com/w40/fr.png", inicio: 1, fin: 20 },
-  { prefijo: "SEN", nombre: "Senegal", bandera: "https://flagcdn.com/w40/sn.png", inicio: 1, fin: 20 },
-  { prefijo: "IRQ", nombre: "Irak", bandera: "https://flagcdn.com/w40/iq.png", inicio: 1, fin: 20 },
-  { prefijo: "NOR", nombre: "Noruega", bandera: "https://flagcdn.com/w40/no.png", inicio: 1, fin: 20 },
-  { prefijo: "ARG", nombre: "Argentina", bandera: "https://flagcdn.com/w40/ar.png", inicio: 1, fin: 20 },
-  { prefijo: "ALG", nombre: "Argelia", bandera: "https://flagcdn.com/w40/dz.png", inicio: 1, fin: 20 },
-  { prefijo: "AUT", nombre: "Austria", bandera: "https://flagcdn.com/w40/at.png", inicio: 1, fin: 20 },
-  { prefijo: "JOR", nombre: "Jordania", bandera: "https://flagcdn.com/w40/jo.png", inicio: 1, fin: 20 },
-  { prefijo: "POR", nombre: "Portugal", bandera: "https://flagcdn.com/w40/pt.png", inicio: 1, fin: 20 },
-  { prefijo: "COD", nombre: "RD Congo", bandera: "https://flagcdn.com/w40/cd.png", inicio: 1, fin: 20 },
-  { prefijo: "UZB", nombre: "Uzbekistán", bandera: "https://flagcdn.com/w40/uz.png", inicio: 1, fin: 20 },
-  { prefijo: "COL", nombre: "Colombia", bandera: "https://flagcdn.com/w40/co.png", inicio: 1, fin: 20 },
-  { prefijo: "ENG", nombre: "Inglaterra", bandera: "https://flagcdn.com/w40/gb-eng.png", inicio: 1, fin: 20 },
-  { prefijo: "CRO", nombre: "Croacia", bandera: "https://flagcdn.com/w40/hr.png", inicio: 1, fin: 20 },
-  { prefijo: "GHA", nombre: "Ghana", bandera: "https://flagcdn.com/w40/gh.png", inicio: 1, fin: 20 },
+  { prefijo: "MEX", nombre: "México", bandera: "https://flagcdn.com/w40/mx.png", inicio: 1, fin: 20 },
+  { prefijo: "CAN", nombre: "Canadá", bandera: "https://flagcdn.com/w40/ca.png", inicio: 1, fin: 20 },
   { prefijo: "PAN", nombre: "Panamá", bandera: "https://flagcdn.com/w40/pa.png", inicio: 1, fin: 20 },
+  { prefijo: "HAI", nombre: "Haití", bandera: "https://flagcdn.com/w40/ht.png", inicio: 1, fin: 20 },
+  { prefijo: "CUW", nombre: "Curazao", bandera: "https://flagcdn.com/w40/cw.png", inicio: 1, fin: 20 },
+  { prefijo: "ARG", nombre: "Argentina", bandera: "https://flagcdn.com/w40/ar.png", inicio: 1, fin: 20 },
+  { prefijo: "BRA", nombre: "Brasil", bandera: "https://flagcdn.com/w40/br.png", inicio: 1, fin: 20 },
+  { prefijo: "COL", nombre: "Colombia", bandera: "https://flagcdn.com/w40/co.png", inicio: 1, fin: 20 },
+  { prefijo: "URU", nombre: "Uruguay", bandera: "https://flagcdn.com/w40/uy.png", inicio: 1, fin: 20 },
+  { prefijo: "ECU", nombre: "Ecuador", bandera: "https://flagcdn.com/w40/ec.png", inicio: 1, fin: 20 },
+  { prefijo: "PAR", nombre: "Paraguay", bandera: "https://flagcdn.com/w40/py.png", inicio: 1, fin: 20 },
+  { prefijo: "ESP", nombre: "España", bandera: "https://flagcdn.com/w40/es.png", inicio: 1, fin: 20 },
+  { prefijo: "ENG", nombre: "Inglaterra", bandera: "https://flagcdn.com/w40/gb-eng.png", inicio: 1, fin: 20 },
+  { prefijo: "FRA", nombre: "Francia", bandera: "https://flagcdn.com/w40/fr.png", inicio: 1, fin: 20 },
+  { prefijo: "GER", nombre: "Alemania", bandera: "https://flagcdn.com/w40/de.png", inicio: 1, fin: 20 },
+  { prefijo: "POR", nombre: "Portugal", bandera: "https://flagcdn.com/w40/pt.png", inicio: 1, fin: 20 },
+  { prefijo: "NED", nombre: "Países Bajos", bandera: "https://flagcdn.com/w40/nl.png", inicio: 1, fin: 20 },
+  { prefijo: "CRO", nombre: "Croacia", bandera: "https://flagcdn.com/w40/hr.png", inicio: 1, fin: 20 },
+  { prefijo: "BEL", nombre: "Bélgica", bandera: "https://flagcdn.com/w40/be.png", inicio: 1, fin: 20 },
+  { prefijo: "SUI", nombre: "Suiza", bandera: "https://flagcdn.com/w40/ch.png", inicio: 1, fin: 20 },
+  { prefijo: "AUT", nombre: "Austria", bandera: "https://flagcdn.com/w40/at.png", inicio: 1, fin: 20 },
+  { prefijo: "TUR", nombre: "Turquía", bandera: "https://flagcdn.com/w40/tr.png", inicio: 1, fin: 20 },
+  { prefijo: "BIH", nombre: "Bosnia", bandera: "https://flagcdn.com/w40/ba.png", inicio: 1, fin: 20 },
+  { prefijo: "SCO", nombre: "Escocia", bandera: "https://flagcdn.com/w40/gb-sct.png", inicio: 1, fin: 20 },
+  { prefijo: "SWE", nombre: "Suecia", bandera: "https://flagcdn.com/w40/se.png", inicio: 1, fin: 20 },
+  { prefijo: "NOR", nombre: "Noruega", bandera: "https://flagcdn.com/w40/no.png", inicio: 1, fin: 20 },
+  { prefijo: "CZE", nombre: "República Checa", bandera: "https://flagcdn.com/w40/cz.png", inicio: 1, fin: 20 },
+  { prefijo: "MAR", nombre: "Marruecos", bandera: "https://flagcdn.com/w40/ma.png", inicio: 1, fin: 20 },
+  { prefijo: "SEN", nombre: "Senegal", bandera: "https://flagcdn.com/w40/sn.png", inicio: 1, fin: 20 },
+  { prefijo: "EGY", nombre: "Egipto", bandera: "https://flagcdn.com/w40/eg.png", inicio: 1, fin: 20 },
+  { prefijo: "CIV", nombre: "Costa de Marfil", bandera: "https://flagcdn.com/w40/ci.png", inicio: 1, fin: 20 },
+  { prefijo: "ALG", nombre: "Argelia", bandera: "https://flagcdn.com/w40/dz.png", inicio: 1, fin: 20 },
+  { prefijo: "GHA", nombre: "Ghana", bandera: "https://flagcdn.com/w40/gh.png", inicio: 1, fin: 20 },
+  { prefijo: "RSA", nombre: "Sudáfrica", bandera: "https://flagcdn.com/w40/za.png", inicio: 1, fin: 20 },
+  { prefijo: "TUN", nombre: "Túnez", bandera: "https://flagcdn.com/w40/tn.png", inicio: 1, fin: 20 },
+  { prefijo: "COD", nombre: "RD Congo", bandera: "https://flagcdn.com/w40/cd.png", inicio: 1, fin: 20 },
+  { prefijo: "CPV", nombre: "Cabo Verde", bandera: "https://flagcdn.com/w40/cv.png", inicio: 1, fin: 20 },
+  { prefijo: "JPN", nombre: "Japón", bandera: "https://flagcdn.com/w40/jp.png", inicio: 1, fin: 20 },
+  { prefijo: "KOR", nombre: "Corea del Sur", bandera: "https://flagcdn.com/w40/kr.png", inicio: 1, fin: 20 },
+  { prefijo: "IRN", nombre: "Irán", bandera: "https://flagcdn.com/w40/ir.png", inicio: 1, fin: 20 },
+  { prefijo: "KSA", nombre: "Arabia Saudita", bandera: "https://flagcdn.com/w40/sa.png", inicio: 1, fin: 20 },
+  { prefijo: "AUS", nombre: "Australia", bandera: "https://flagcdn.com/w40/au.png", inicio: 1, fin: 20 },
+  { prefijo: "QAT", nombre: "Qatar", bandera: "https://flagcdn.com/w40/qa.png", inicio: 1, fin: 20 },
+  { prefijo: "IRQ", nombre: "Irak", bandera: "https://flagcdn.com/w40/iq.png", inicio: 1, fin: 20 },
+  { prefijo: "JOR", nombre: "Jordania", bandera: "https://flagcdn.com/w40/jo.png", inicio: 1, fin: 20 },
+  { prefijo: "UZB", nombre: "Uzbekistán", bandera: "https://flagcdn.com/w40/uz.png", inicio: 1, fin: 20 },
+  { prefijo: "NZL", nombre: "Nueva Zelanda", bandera: "https://flagcdn.com/w40/nz.png", inicio: 1, fin: 20 },
   { prefijo: "CC", nombre: "Coca-Cola", bandera: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg", inicio: 1, fin: 14 }
 ];
 
@@ -64,6 +64,10 @@ function Album({ usuario }) {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todas');
   const [cargando, setCargando] = useState(true);
+  
+  // NUEVO: Estado para bloquear la pantalla al hacer scroll
+  const [bloqueado, setBloqueado] = useState(false);
+  
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -100,7 +104,6 @@ function Album({ usuario }) {
     if (limpiarBusqueda) setBusqueda('');
     const docRef = doc(db, "inventarios", usuario.uid);
     await updateDoc(docRef, { [codigo]: nuevaCantidad });
-    // Se eliminó el focus() para evitar que el teclado salte en móviles
   };
 
   const reiniciarAlbum = async () => {
@@ -114,11 +117,16 @@ function Album({ usuario }) {
         await setDoc(docRef, resetData);
       }
     }
-    // Se eliminó el focus() aquí también
   };
 
   const llenarEquipo = async (seccion) => {
+    // Si está bloqueado, no permite llenar
+    if (bloqueado) {
+      alert("⚠️ Desbloquea el candado arriba para poder modificar las monas.");
+      return;
+    }
     if (!window.confirm(`¿Estás seguro de marcar todo el equipo de ${seccion.nombre} como obtenido?`)) return;
+    
     const nuevoInventario = { ...inventario };
     const actualizacionesDB = {};
     let huboCambios = false;
@@ -167,13 +175,13 @@ function Album({ usuario }) {
       if (repetidasSeccion.length > 0) {
         repetidasPorPais.push(`🔸 *${seccion.nombre}:* ${repetidasSeccion.join(", ")}`);
       }
-      
       if (faltantesSeccion.length > 0) {
         faltantesPorPais.push(`🔹 *${seccion.nombre}:* ${faltantesSeccion.join(", ")}`);
       }
     });
 
-    let mensaje = "🏆 *¡Hola! Estoy llenando el álbum oficial del Mundial 2026.*\n\n";
+    // NUEVO: Mensaje personalizado de inicio y fin
+    let mensaje = "📱 *Lista generada desde MisMonas*\n\n🏆 *¡Hola! Estoy llenando el álbum oficial del Mundial 2026.*\n\n";
 
     if (repetidasPorPais.length > 0) {
       mensaje += `*📦 TENGO REPETIDAS (${totalRepetidas}):*\n${repetidasPorPais.join("\n")}\n\n`;
@@ -187,13 +195,17 @@ function Album({ usuario }) {
       mensaje += `*💎 ME FALTAN:*\n¡Ya llené el álbum!\n\n`;
     }
 
-    mensaje += "👉 ¿Revisas si tienes alguna que me sirva o si te sirve alguna de las mías? ¡Hagamos trueque! ⚽";
+    mensaje += "👉 ¿Revisas si tienes alguna que me sirva o si te sirve alguna de las mías? ¡Hagamos trueque! ⚽\n\n";
+    mensaje += "📥 *Descarga la app y gestiona tu álbum aquí:*\nhttps://mismonas.online";
 
     const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
   };
 
   const manejarKeyDown = (e) => {
+    // Si está bloqueado, deshabilitamos la adición por teclado
+    if (bloqueado) return;
+    
     if (e.key === 'Enter' && busqueda.length >= 1) {
         let codigoBuscar = busqueda === "0" ? "00" : busqueda;
         if (inventario[codigoBuscar] !== undefined) {
@@ -218,7 +230,6 @@ function Album({ usuario }) {
     }
   });
 
-  // ESTILO MEJORADO PARA PESTAÑAS (Responsivo y Adaptable)
   const estiloPestana = (tipo) => ({
     flex: "1 1 22%",
     minWidth: "75px",
@@ -280,7 +291,6 @@ function Album({ usuario }) {
           </div>
         </div>
 
-        {/* CONTENEDOR DE BOTONES CON FLEXWRAP PARA MÓVILES */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "5px", background: "rgba(255,255,255,0.1)", padding: "5px", borderRadius: "10px" }}>
           <button onClick={() => setFiltroEstado('todas')} style={estiloPestana('todas')}>Ver Todas</button>
           <button onClick={() => setFiltroEstado('faltan')} style={estiloPestana('faltan')}>Faltantes</button>
@@ -289,7 +299,8 @@ function Album({ usuario }) {
         </div>
       </div>
 
-      <div style={{ position: "sticky", top: "10px", zIndex: 100, marginBottom: "25px" }}>
+      {/* NUEVO: BARRA DE BÚSQUEDA Y CANDADO FLOTANTE */}
+      <div style={{ position: "sticky", top: "10px", zIndex: 100, marginBottom: "25px", display: "flex", gap: "10px" }}>
         <input 
           ref={inputRef}
           type="text" 
@@ -297,8 +308,21 @@ function Album({ usuario }) {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value.toUpperCase().trim())}
           onKeyDown={manejarKeyDown}
-          style={{ width: "100%", padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1.1em", boxSizing: "border-box", boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}
+          style={{ flex: 1, padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1.1em", boxSizing: "border-box", boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}
         />
+        <button 
+          onClick={() => setBloqueado(!bloqueado)}
+          title={bloqueado ? "Desbloquear edición" : "Bloquear edición para deslizar"}
+          style={{
+            background: bloqueado ? WC_COLORS.red : WC_COLORS.green,
+            color: "white", border: "none", borderRadius: "12px",
+            width: "60px", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "1.5em", cursor: "pointer", boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+            transition: "0.3s"
+          }}
+        >
+          {bloqueado ? '🔒' : '🔓'}
+        </button>
       </div>
 
       <div>
@@ -320,54 +344,79 @@ function Album({ usuario }) {
           }
 
           if (monasVisibles.length === 0) return null;
-
+          
           return (
             <div key={seccion.nombre} style={{ marginBottom: "20px" }}>
-              
-              {/* NUEVA CABECERA CON BOTÓN "LLENAR EQUIPO" */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f1f5f9", padding: "8px 12px", borderRadius: "8px", marginBottom: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>
                   {seccion.bandera && <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "24px", borderRadius: "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />}
                   {seccion.nombre}
                 </div>
-                
                 <button
                   onClick={() => llenarEquipo(seccion)}
                   style={{
-                    background: WC_COLORS.green, color: "white", border: "none", borderRadius: "6px",
-                    padding: "6px 10px", cursor: "pointer", fontSize: "0.75em", fontWeight: "bold",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)", transition: "0.2s"
+                    background: bloqueado ? "#94a3b8" : WC_COLORS.green, 
+                    color: "white", border: "none", borderRadius: "6px",
+                    padding: "6px 10px", cursor: bloqueado ? "default" : "pointer", 
+                    fontSize: "0.75em", fontWeight: "bold",
+                    boxShadow: bloqueado ? "none" : "0 2px 4px rgba(0,0,0,0.15)", transition: "0.2s"
                   }}
                   title={`Marcar todas las de ${seccion.nombre} como obtenidas`}
                 >
-                  ✓ Llenar Equipo
+                   ✓ Llenar Equipo
                 </button>
               </div>
-              {/* FIN NUEVA CABECERA */}
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(85px, 1fr))", gap: "10px", padding: "10px 0" }}>
                 {monasVisibles.map(codigo => {
                   const cant = inventario[codigo] || 0;
                   return (
                     <div key={codigo} style={{ position: "relative" }}>
+                      
+                      {/* CAJA PRINCIPAL DE LA MONA CON ALTURA FIJA Y CENTRADA */}
                       <div 
-                        onClick={() => modificarCantidad(codigo, 1, busqueda !== '')}
+                        onClick={() => { if (!bloqueado) modificarCantidad(codigo, 1, busqueda !== '') }}
                         style={{ 
                           background: cant > 1 ? WC_COLORS.lightBlue : cant === 1 ? WC_COLORS.green : "#ffffff",
                           border: "1px solid #e2e8f0",
-                          padding: "12px 5px", textAlign: "center", borderRadius: "10px", cursor: "pointer", fontWeight: "bold", transition: "0.2s",
+                          height: "45px", /* ALTURA FIJA: Previene que se estire */
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          padding: "0 5px", textAlign: "center", borderRadius: "10px", 
+                          cursor: bloqueado ? "default" : "pointer", 
+                          fontWeight: "bold", transition: "0.2s",
                           color: cant >= 1 ? "white" : WC_COLORS.darkBlue,
                           opacity: cant === 0 && filtroEstado === 'todas' ? 0.6 : 1,
                           boxShadow: cant >= 1 ? "0 4px 6px rgba(0,0,0,0.1)" : "none"
                         }}
                       >
                         <div style={{ fontSize: "0.95em" }}>{codigo}</div>
-                        {cant > 1 && <div style={{ fontSize: "0.75em", color: WC_COLORS.darkBlue, background: "rgba(255,255,255,0.8)", borderRadius: "10px", display: "inline-block", padding: "1px 6px", marginTop: "2px" }}>x{cant}</div>}
                       </div>
-                      {cant > 0 && (
+
+                      {/* BADGE "x2" EN LA ESQUINA SUPERIOR IZQUIERDA */}
+                      {cant > 1 && (
+                        <div style={{
+                          position: "absolute", top: "-8px", left: "-8px",
+                          fontSize: "0.75em", color: WC_COLORS.darkBlue, background: "white",
+                          border: `2px solid ${WC_COLORS.lightBlue}`, borderRadius: "10px",
+                          padding: "2px 6px", fontWeight: "900", boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                          zIndex: 2, pointerEvents: "none"
+                        }}>
+                          x{cant}
+                        </div>
+                      )}
+
+                      {/* BOTÓN MENOS "-" EN LA ESQUINA SUPERIOR DERECHA (Oculto si está bloqueado) */}
+                      {!bloqueado && cant > 0 && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); modificarCantidad(codigo, -1); }}
-                          style={{ position: "absolute", top: "-5px", right: "-5px", background: WC_COLORS.red, color: "white", border: "none", borderRadius: "50%", width: "22px", height: "22px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }}
+                          style={{ 
+                            position: "absolute", top: "-8px", right: "-8px", 
+                            background: WC_COLORS.red, color: "white", border: "none", 
+                            borderRadius: "50%", width: "24px", height: "24px", 
+                            cursor: "pointer", fontSize: "14px", display: "flex", 
+                            alignItems: "center", justifyContent: "center", fontWeight: "bold", 
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)", zIndex: 2 
+                          }}
                         > - </button>
                       )}
                     </div>
