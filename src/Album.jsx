@@ -64,10 +64,7 @@ function Album({ usuario }) {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todas');
   const [cargando, setCargando] = useState(true);
-  
-  // NUEVO: Estado para bloquear la pantalla al hacer scroll
   const [bloqueado, setBloqueado] = useState(false);
-  
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -120,7 +117,6 @@ function Album({ usuario }) {
   };
 
   const llenarEquipo = async (seccion) => {
-    // Si está bloqueado, no permite llenar
     if (bloqueado) {
       alert("⚠️ Desbloquea el candado arriba para poder modificar las monas.");
       return;
@@ -180,7 +176,6 @@ function Album({ usuario }) {
       }
     });
 
-    // NUEVO: Mensaje personalizado de inicio y fin
     let mensaje = "📱 *Lista generada desde MisMonas*\n\n🏆 *¡Hola! Estoy llenando el álbum oficial del Mundial 2026.*\n\n";
 
     if (repetidasPorPais.length > 0) {
@@ -203,9 +198,7 @@ function Album({ usuario }) {
   };
 
   const manejarKeyDown = (e) => {
-    // Si está bloqueado, deshabilitamos la adición por teclado
     if (bloqueado) return;
-    
     if (e.key === 'Enter' && busqueda.length >= 1) {
         let codigoBuscar = busqueda === "0" ? "00" : busqueda;
         if (inventario[codigoBuscar] !== undefined) {
@@ -245,7 +238,7 @@ function Album({ usuario }) {
   });
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px", margin: "auto", padding: "10px" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px", margin: "auto", padding: "10px", paddingBottom: "80px" }}>
       
       {/* CABECERA CON BOTÓN DE WHATSAPP Y REINICIAR */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "10px" }}>
@@ -275,6 +268,7 @@ function Album({ usuario }) {
         </div>
       </div>
 
+      {/* TARJETA DE ESTADÍSTICAS */}
       <div style={{ background: WC_COLORS.darkBlue, color: "white", padding: "20px", borderRadius: "15px", marginBottom: "20px", boxShadow: "0 4px 15px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
           <div style={{ textAlign: "center", flex: 1 }}>
@@ -299,32 +293,43 @@ function Album({ usuario }) {
         </div>
       </div>
 
-      {/* NUEVO: BARRA DE BÚSQUEDA Y CANDADO FLOTANTE */}
-      <div style={{ position: "sticky", top: "10px", zIndex: 100, marginBottom: "25px", display: "flex", gap: "10px" }}>
+      {/* NUEVO DISEÑO RESPONSIVE: CÁPSULA FLOTANTE PARA BUSCADOR Y CANDADO */}
+      <div style={{ 
+        position: "sticky", top: "10px", zIndex: 100, marginBottom: "25px", 
+        display: "flex", gap: "10px", padding: "10px",
+        background: "rgba(248, 250, 252, 0.9)", backdropFilter: "blur(10px)",
+        borderRadius: "16px", boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
+        alignItems: "stretch" /* Asegura que ambos tengan la misma altura */
+      }}>
         <input 
           ref={inputRef}
           type="text" 
-          placeholder="Busca rápido (Ej: ARG10, JOR, RSA...)" 
+          placeholder="Busca rápido (Ej: ARG10...)" 
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value.toUpperCase().trim())}
           onKeyDown={manejarKeyDown}
-          style={{ flex: 1, padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1.1em", boxSizing: "border-box", boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}
+          style={{ 
+            flex: 1, padding: "12px 15px", borderRadius: "10px", 
+            border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1em", 
+            boxSizing: "border-box", minWidth: "0" /* Evita que se salga de la pantalla en móviles pequeños */
+          }}
         />
         <button 
           onClick={() => setBloqueado(!bloqueado)}
           title={bloqueado ? "Desbloquear edición" : "Bloquear edición para deslizar"}
           style={{
             background: bloqueado ? WC_COLORS.red : WC_COLORS.green,
-            color: "white", border: "none", borderRadius: "12px",
-            width: "60px", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.5em", cursor: "pointer", boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-            transition: "0.3s"
+            color: "white", border: "none", borderRadius: "10px",
+            width: "55px", minWidth: "55px", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "1.4em", cursor: "pointer", transition: "0.3s",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
           }}
         >
           {bloqueado ? '🔒' : '🔓'}
         </button>
       </div>
 
+      {/* SECCIONES DEL ÁLBUM */}
       <div>
         {seccionesAlbum.map(seccion => {
           const monasVisibles = [];
@@ -346,10 +351,11 @@ function Album({ usuario }) {
           if (monasVisibles.length === 0) return null;
           
           return (
-            <div key={seccion.nombre} style={{ marginBottom: "20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f1f5f9", padding: "8px 12px", borderRadius: "8px", marginBottom: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>
-                  {seccion.bandera && <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "24px", borderRadius: "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />}
+            <div key={seccion.nombre} style={{ marginBottom: "25px" }}>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f1f5f9", padding: "10px 15px", borderRadius: "10px", marginBottom: "15px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "0.95em", textTransform: "uppercase" }}>
+                  {seccion.bandera && <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "26px", borderRadius: "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />}
                   {seccion.nombre}
                 </div>
                 <button
@@ -357,7 +363,7 @@ function Album({ usuario }) {
                   style={{
                     background: bloqueado ? "#94a3b8" : WC_COLORS.green, 
                     color: "white", border: "none", borderRadius: "6px",
-                    padding: "6px 10px", cursor: bloqueado ? "default" : "pointer", 
+                    padding: "6px 12px", cursor: bloqueado ? "default" : "pointer", 
                     fontSize: "0.75em", fontWeight: "bold",
                     boxShadow: bloqueado ? "none" : "0 2px 4px rgba(0,0,0,0.15)", transition: "0.2s"
                   }}
@@ -367,21 +373,27 @@ function Album({ usuario }) {
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(85px, 1fr))", gap: "10px", padding: "10px 0" }}>
+              {/* NUEVO DISEÑO: CUADRÍCULA ESTRICTA DE 4 COLUMNAS */}
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "repeat(4, 1fr)", /* ¡ESTA LÍNEA ES LA CLAVE! 4 Columnas perfectas */
+                gap: "8px", 
+                padding: "0 5px" 
+              }}>
                 {monasVisibles.map(codigo => {
                   const cant = inventario[codigo] || 0;
                   return (
                     <div key={codigo} style={{ position: "relative" }}>
                       
-                      {/* CAJA PRINCIPAL DE LA MONA CON ALTURA FIJA Y CENTRADA */}
+                      {/* CAJA DE LA MONA */}
                       <div 
                         onClick={() => { if (!bloqueado) modificarCantidad(codigo, 1, busqueda !== '') }}
                         style={{ 
                           background: cant > 1 ? WC_COLORS.lightBlue : cant === 1 ? WC_COLORS.green : "#ffffff",
                           border: "1px solid #e2e8f0",
-                          height: "45px", /* ALTURA FIJA: Previene que se estire */
+                          height: "50px", /* Altura ligeramente ajustada para asegurar que quepan las letras */
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          padding: "0 5px", textAlign: "center", borderRadius: "10px", 
+                          padding: "0 2px", textAlign: "center", borderRadius: "8px", 
                           cursor: bloqueado ? "default" : "pointer", 
                           fontWeight: "bold", transition: "0.2s",
                           color: cant >= 1 ? "white" : WC_COLORS.darkBlue,
@@ -389,10 +401,11 @@ function Album({ usuario }) {
                           boxShadow: cant >= 1 ? "0 4px 6px rgba(0,0,0,0.1)" : "none"
                         }}
                       >
-                        <div style={{ fontSize: "0.95em" }}>{codigo}</div>
+                        {/* Tamaño de fuente adaptable (clamp) para que los textos largos (ej: ENG20) no rompan la caja */}
+                        <div style={{ fontSize: "clamp(0.7em, 3.5vw, 0.95em)", wordBreak: "break-all" }}>{codigo}</div>
                       </div>
 
-                      {/* BADGE "x2" EN LA ESQUINA SUPERIOR IZQUIERDA */}
+                      {/* BADGE "x2" FLOTANTE */}
                       {cant > 1 && (
                         <div style={{
                           position: "absolute", top: "-8px", left: "-8px",
@@ -405,14 +418,14 @@ function Album({ usuario }) {
                         </div>
                       )}
 
-                      {/* BOTÓN MENOS "-" EN LA ESQUINA SUPERIOR DERECHA (Oculto si está bloqueado) */}
+                      {/* BOTÓN MENOS "-" FLOTANTE */}
                       {!bloqueado && cant > 0 && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); modificarCantidad(codigo, -1); }}
                           style={{ 
                             position: "absolute", top: "-8px", right: "-8px", 
                             background: WC_COLORS.red, color: "white", border: "none", 
-                            borderRadius: "50%", width: "24px", height: "24px", 
+                            borderRadius: "50%", width: "22px", height: "22px", 
                             cursor: "pointer", fontSize: "14px", display: "flex", 
                             alignItems: "center", justifyContent: "center", fontWeight: "bold", 
                             boxShadow: "0 2px 4px rgba(0,0,0,0.2)", zIndex: 2 
