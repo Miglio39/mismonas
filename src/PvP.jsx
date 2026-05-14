@@ -1,7 +1,8 @@
 // src/PvP.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import html2canvas from 'html2canvas';
 
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
@@ -61,18 +62,22 @@ const seccionesAlbum = [
 
 function PvP({ usuario }) {
   const [inventario, setInventario] = useState({});
-  const [rareza, setRareza] = useState({}); // NUEVO ESTADO PARA MAPA DE CALOR
+  const [rareza, setRareza] = useState({});
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [listaPegada, setListaPegada] = useState('');
   
   const [doy, setDoy] = useState([]);
   const [recibo, setRecibo] = useState([]);
   const [mostrarQR, setMostrarQR] = useState(false);
   const [matchUid, setMatchUid] = useState(() => new URLSearchParams(window.location.search).get('match'));
 
+  // REFERENCIAS PARA LA IMAGEN DESCARGABLE
+  const reciboRef = useRef(null);
+  const [generandoImagen, setGenerandoImagen] = useState(false);
+
   useEffect(() => {
     const cargarDatos = async () => {
-      // 1. CARGAMOS INVENTARIO LOCAL
       const docRef = doc(db, "inventarios", usuario.uid);
       const docSnap = await getDoc(docRef);
       let miInv = {};
@@ -81,7 +86,6 @@ function PvP({ usuario }) {
         setInventario(miInv);
       }
 
-      // 2. MAGIA AUTO-MATCH
       if (matchUid && matchUid !== usuario.uid) {
         const otroRef = doc(db, "inventarios", matchUid);
         const otroSnap = await getDoc(otroRef);
@@ -100,13 +104,8 @@ function PvP({ usuario }) {
           setDoy(autoDoy);
           setRecibo(autoRecibo);
         }
-      } else if (matchUid === usuario.uid) {
-         alert("😅 Acabas de escanear tu propio código QR.");
-         window.history.replaceState(null, '', window.location.pathname);
-         setMatchUid(null);
       }
 
-      // 3. CALCULAR MAPA DE CALOR (OFERTA VS DEMANDA)
       const mercado = {};
       seccionesAlbum.forEach(seccion => {
         for (let i = seccion.inicio; i <= seccion.fin; i++) {
@@ -135,12 +134,11 @@ function PvP({ usuario }) {
       });
 
       const arregloRareza = Object.values(mercado).map(item => ({ ...item, balance: item.oferta - item.demanda }));
-      // Ordenamos de menor a mayor balance (los más negativos son los más raros)
       arregloRareza.sort((a, b) => a.balance - b.balance);
 
       const mapaRareza = {};
       arregloRareza.forEach((item, index) => {
-        mapaRareza[item.codigo] = index + 1; // 1 = La más rara del mundo
+        mapaRareza[item.codigo] = index + 1;
       });
       setRareza(mapaRareza);
       
@@ -156,12 +154,79 @@ function PvP({ usuario }) {
     for (let i = seccion.inicio; i <= seccion.fin; i++) {
       let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
       let cant = inventario[codigo] || 0;
+      
       if (busqueda === '' || codigo.includes(busqueda.toUpperCase())) {
         if (cant > 1) misRepetidas.push(codigo);
         if (cant === 0) misFaltantes.push(codigo);
       }
     }
   });
+
+  const procesarListaPegada = () => {
+    if (!listaPegada.trim()) {
+      alert("⚠️ Pega una lista de WhatsApp primero.");
+      return;
+    }
+
+    const texto = listaPegada.toUpperCase();
+    let textoRepetidasOtro = "";
+    let textoFaltantesOtro = "";
+
+    if (texto.includes("TENGO REPETIDAS") || texto.includes("REPETIDAS")) {
+        const matchRep = texto.match(/(?:TENGO REPETIDAS|REPETIDAS).*?(?=ME FALTAN|FALTANTES|$)/s);
+        if (matchRep) textoRepetidasOtro = matchRep[0];
+    }
+    if (texto.includes("ME FALTAN") || texto.includes("FALTANTES")) {
+        const matchFal = texto.match(/(?:ME FALTAN|FALTANTES).*?(?=TENGO REPETIDAS|REPETIDAS|$)/s);
+        if (matchFal) textoFaltantesOtro = matchFal[0];
+    }
+
+    const codigosEnTexto = (txt) => {
+        let codigosExtraidos = [];
+        const lineas = txt.split('\n');
+        const prefijosValidos = seccionesAlbum.map(s => s.prefijo).filter(p => p !== "");
+
+        lineas.forEach(linea => {
+            const prefijoLinea = prefijosValidos.find(p => linea.includes(p));
+            if (prefijoLinea) {
+                const numeros = linea.match(/\b\d+\b/g);
+                if (numeros) {
+                    numeros.forEach(num => codigosExtraidos.push(`${prefijoLinea}${num}`));
+                }
+            } else {
+                const tradicionales = linea.match(/[A-Z]+[0-9]+/g);
+                if (tradicionales) codigosExtraidos.push(...tradicionales);
+                if (linea.includes("00") && !linea.match(/[A-Z]+00/)) {
+                    codigosExtraidos.push("00");
+                }
+            }
+        });
+        return [...new Set(codigosExtraidos)]; 
+    };
+
+    const repetidasOtro = codigosEnTexto(textoRepetidasOtro);
+    const faltantesOtro = codigosEnTexto(textoFaltantesOtro);
+
+    let autoDoy = [];
+    let autoRecibo = [];
+
+    faltantesOtro.forEach(codigo => {
+        if (inventario[codigo] > 1) autoDoy.push(codigo);
+    });
+
+    repetidasOtro.forEach(codigo => {
+        if (inventario[codigo] === 0) autoRecibo.push(codigo);
+    });
+
+    if (autoDoy.length === 0 && autoRecibo.length === 0) {
+        alert("😕 No encontramos ningún match. Sus faltantes/repetidas no coinciden con las tuyas.");
+    } else {
+        setDoy(autoDoy);
+        setRecibo(autoRecibo);
+        setListaPegada('');
+        alert(`✨ ¡Match encontrado! Entregas ${autoDoy.length} y recibes ${autoRecibo.length}.`);
+    }
+  };
 
   const toggleDoy = (codigo) => {
     if (doy.includes(codigo)) setDoy(doy.filter(c => c !== codigo));
@@ -173,24 +238,21 @@ function PvP({ usuario }) {
     else setRecibo([...recibo, codigo]);
   };
 
-  // Función para determinar el color del mapa de calor basado en el ranking
   const getEstiloRareza = (codigo, isSelected) => {
     const rank = rareza[codigo] || 999;
     let bgColor = "#ffffff";
     let textColor = WC_COLORS.darkBlue;
 
-    if (rank <= 30) { bgColor = "#7f1d1d"; textColor = "white"; } // Top 30: Míticas (Rojo Oscuro)
-    else if (rank <= 100) { bgColor = WC_COLORS.red; textColor = "white"; } // Top 100: Escasas (Rojo)
-    else if (rank <= 250) { bgColor = "#f97316"; textColor = "white"; } // Top 250: Intermedias (Naranja)
-    else if (rank <= 450) { bgColor = "#facc15"; textColor = WC_COLORS.darkBlue; } // Top 450: Normales (Amarillo)
-    else { bgColor = WC_COLORS.lime; textColor = WC_COLORS.darkBlue; } // Resto: Comunes (Verde)
+    if (rank <= 30) { bgColor = "#7f1d1d"; textColor = "white"; }
+    else if (rank <= 100) { bgColor = WC_COLORS.red; textColor = "white"; }
+    else if (rank <= 250) { bgColor = "#f97316"; textColor = "white"; }
+    else if (rank <= 450) { bgColor = "#facc15"; textColor = WC_COLORS.darkBlue; }
+    else { bgColor = WC_COLORS.lime; textColor = WC_COLORS.darkBlue; }
 
     return {
       background: bgColor,
       color: textColor,
-      border: isSelected ? "3px solid #0f172a" : `1px solid ${bgColor}`, // Borde negro grueso si la seleccionas
-      transform: isSelected ? "scale(0.9)" : "scale(1)", // Se hunde si la seleccionas
-      boxShadow: isSelected ? "inset 0 0 10px rgba(0,0,0,0.5)" : "0 2px 4px rgba(0,0,0,0.1)",
+      border: isSelected ? "3px solid #0f172a" : `1px solid ${bgColor}`,
       height: "45px",
       borderRadius: "8px", fontWeight: "900", cursor: "pointer",
       fontSize: "clamp(0.7em, 3.2vw, 0.9em)", display: "flex", alignItems: "center", justifyContent: "center",
@@ -249,127 +311,176 @@ function PvP({ usuario }) {
     setCargando(false);
   };
 
-  if (cargando) return (
-    <div style={{ textAlign: "center", marginTop: "50px", color: WC_COLORS.darkBlue }}>
-      <div style={{ fontSize: "3em", marginBottom: "15px", animation: "spin 2s linear infinite" }}>🔄</div>
-      <h3 style={{ margin: 0, fontWeight: "900" }}>Analizando Mercado...</h3>
-      <p style={{ color: "#64748b", fontSize: "0.9em" }}>Calculando mapa de calor de escasez</p>
-    </div>
-  );
+  // NUEVA FUNCIÓN PARA GENERAR IMAGEN DESCARGABLE
+  const descargarResumen = async () => {
+    if (!reciboRef.current) return;
+    setGenerandoImagen(true);
+    try {
+      const canvas = await html2canvas(reciboRef.current, {
+        scale: 2, // Para que la imagen quede en alta resolución
+        backgroundColor: null,
+        useCORS: true
+      });
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `Propuesta_Trueque_MisMonas.png`;
+      link.click();
+    } catch (error) {
+      console.error("Error generando la imagen", error);
+      alert("❌ Ocurrió un error al generar la imagen.");
+    }
+    setGenerandoImagen(false);
+  };
+
+  if (cargando) return <div style={{ textAlign: "center", marginTop: "50px", color: WC_COLORS.darkBlue }}>🔄 Analizando mercado y rarezas...</div>;
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px", margin: "auto", padding: "10px", paddingBottom: "100px" }}>
       
-      <div style={{ textAlign: "center", marginBottom: "25px" }}>
+      {/* ---------------- TICKET OCULTO PARA LA FOTO ---------------- */}
+      <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
+        <div ref={reciboRef} style={{ width: "450px", background: `linear-gradient(135deg, ${WC_COLORS.darkBlue}, #001233)`, color: "white", padding: "30px", borderRadius: "20px", fontFamily: "'Inter', sans-serif" }}>
+          
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
+            <h2 style={{ margin: "0", fontSize: "2.5em", fontWeight: "900", letterSpacing: "-1px" }}>
+              Mis<span style={{ color: WC_COLORS.lime }}>Monas</span>
+            </h2>
+            <p style={{ margin: "5px 0 0 0", fontSize: "1.1em", color: WC_COLORS.lightBlue, textTransform: "uppercase", fontWeight: "bold" }}>Propuesta de Trueque 🤝</p>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "20px", marginBottom: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.3)" }}>
+            <h3 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "1.2em", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px" }}>
+              📤 Yo Entrego <span style={{ color: WC_COLORS.red }}>({doy.length})</span>
+            </h3>
+            <p style={{ margin: 0, fontSize: "1.2em", fontWeight: "bold", color: "#334155", wordWrap: "break-word", lineHeight: "1.5" }}>
+              {doy.length > 0 ? doy.join(", ") : "Ninguna"}
+            </p>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.3)" }}>
+            <h3 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "1.2em", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px" }}>
+              📥 Yo Recibo <span style={{ color: WC_COLORS.green }}>({recibo.length})</span>
+            </h3>
+            <p style={{ margin: 0, fontSize: "1.2em", fontWeight: "bold", color: "#334155", wordWrap: "break-word", lineHeight: "1.5" }}>
+              {recibo.length > 0 ? recibo.join(", ") : "Ninguna"}
+            </p>
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: "25px", borderTop: "1px dashed rgba(255,255,255,0.3)", paddingTop: "15px" }}>
+            <p style={{ margin: "0 0 5px 0", fontSize: "1.2em", fontWeight: "bold", color: WC_COLORS.lime }}>¿Hagamos el cambio? ⚽</p>
+            <p style={{ margin: 0, fontSize: "0.9em", color: "white", opacity: 0.8 }}>Escanea mi código en: mismonas.online</p>
+          </div>
+        </div>
+      </div>
+      {/* ------------------------------------------------------------ */}
+
+
+      <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "25px" }}>
         <button 
           onClick={() => setMostrarQR(true)}
-          style={{
-            background: `linear-gradient(135deg, ${WC_COLORS.darkBlue}, ${WC_COLORS.lightBlue})`,
-            color: "white", padding: "15px 30px", borderRadius: "30px",
-            border: "none", fontWeight: "900", fontSize: "1.1em", textTransform: "uppercase",
-            cursor: "pointer", boxShadow: "0 8px 20px rgba(0, 163, 224, 0.4)",
-            display: "inline-flex", alignItems: "center", gap: "10px"
-          }}
+          style={{ background: WC_COLORS.darkBlue, color: "white", padding: "12px 20px", borderRadius: "30px", border: "none", fontWeight: "900", cursor: "pointer" }}
         >
-          📷 Mostrar mi Código QR
+          📷 Mi QR
         </button>
       </div>
 
-      {mostrarQR && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-          background: "rgba(0,32,91,0.8)", display: "flex", alignItems: "center",
-          justifyContent: "center", zIndex: 9999, padding: "20px", backdropFilter: "blur(5px)"
-        }}>
-          <div style={{ background: "white", padding: "40px 30px", borderRadius: "24px", textAlign: "center", maxWidth: "350px", width: "100%", boxShadow: "0 15px 40px rgba(0,0,0,0.5)" }}>
-            <h3 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "1.6em", fontWeight: "900" }}>Tu Código de Cambio</h3>
-            <div style={{ background: "white", padding: "15px", borderRadius: "16px", border: `3px dashed ${WC_COLORS.lightBlue}`, display: "inline-block" }}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mismonas.online/?match=${usuario.uid}`} alt="QR" style={{ width: "200px", height: "200px" }} />
-            </div>
-            <button onClick={() => setMostrarQR(false)} style={{ display: "block", width: "100%", background: WC_COLORS.red, color: "white", padding: "15px", borderRadius: "12px", border: "none", fontWeight: "900", fontSize: "1.1em", marginTop: "30px", cursor: "pointer" }}>Cerrar</button>
-          </div>
-        </div>
-      )}
+      {/* ÁREA DE PEGADO INTELIGENTE */}
+      <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lime}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+        <h4 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>📋 Análisis Rápido de Lista</h4>
+        <textarea 
+          placeholder="Pega aquí la lista que te enviaron por WhatsApp..."
+          value={listaPegada}
+          onChange={(e) => setListaPegada(e.target.value)}
+          style={{ width: "100%", height: "80px", borderRadius: "10px", border: "1px solid #e2e8f0", padding: "10px", fontSize: "0.9em", resize: "none", marginBottom: "10px", fontFamily: "inherit" }}
+        />
+        <button 
+          onClick={procesarListaPegada}
+          style={{ width: "100%", background: WC_COLORS.green, color: "white", border: "none", padding: "12px", borderRadius: "10px", fontWeight: "900", cursor: "pointer", textTransform: "uppercase" }}
+        >
+          ⚡ Generar Trueque Automático
+        </button>
+      </div>
 
-      {/* AVISO DE AUTO-MATCH */}
-      {matchUid && (
-        <div style={{ background: WC_COLORS.lime, color: WC_COLORS.darkBlue, padding: "15px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", fontWeight: "900", boxShadow: "0 4px 10px rgba(0,0,0,0.1)", border: `2px solid ${WC_COLORS.green}` }}>
-          ✨ ¡AUTO-MATCH ACTIVADO! <br/>
-          <span style={{ fontSize: "0.85em", fontWeight: "normal", color: "#333" }}>Hemos escaneado el código y armado el trueque ideal. Verifica y confirma.</span>
-        </div>
-      )}
-
-      {/* LEYENDA DEL MAPA DE CALOR */}
-      <div style={{ background: "white", padding: "15px", borderRadius: "12px", marginBottom: "20px", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", border: `1px solid ${WC_COLORS.lightBlue}` }}>
-        <h4 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, textAlign: "center", fontSize: "0.9em", textTransform: "uppercase" }}>🔥 Mapa de Calor de Rareza</h4>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", fontSize: "0.75em", fontWeight: "bold" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: "#7f1d1d", borderRadius: "3px" }}></span> Míticas (Top 30)</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: WC_COLORS.red, borderRadius: "3px" }}></span> Escasas</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: "#f97316", borderRadius: "3px" }}></span> Buscadas</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: "#facc15", borderRadius: "3px" }}></span> Normales</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: WC_COLORS.lime, borderRadius: "3px" }}></span> Repetidas</div>
-        </div>
+      {/* LEYENDA RAREZA */}
+      <div style={{ background: "white", padding: "10px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", fontSize: "0.7em" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#7f1d1d", borderRadius: "2px" }}></span> Mítica</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: WC_COLORS.red, borderRadius: "2px" }}></span> Escasa</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#f97316", borderRadius: "2px" }}></span> Buscada</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#facc15", borderRadius: "2px" }}></span> Normal</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: WC_COLORS.lime, borderRadius: "2px" }}></span> Común</div>
       </div>
 
       <input 
         type="text" 
-        placeholder="🔍 Búsqueda rápida (Ej: ARG, COL...)" 
+        placeholder="🔍 Búsqueda manual (ARG, COL...)" 
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value.toUpperCase().trim())}
-        style={{ width: "100%", padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1.1em", boxSizing: "border-box", marginBottom: "20px", boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}
+        style={{ width: "100%", padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1.1em", boxSizing: "border-box", marginBottom: "20px" }}
       />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-        
-        {/* COLUMNA: LO QUE DOY */}
-        <div style={{ flex: "1 1 300px", background: "rgba(0, 163, 224, 0.1)", padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.lightBlue}` }}>
-          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, textAlign: "center", fontSize: "1em" }}>📤 Entrego (Repetidas)</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "350px", overflowY: "auto", padding: "5px" }}>
-            {misRepetidas.map(codigo => {
-              const isSelected = doy.includes(codigo);
-              return (
-                <button 
-                  key={`doy-${codigo}`}
-                  onClick={() => toggleDoy(codigo)}
-                  style={getEstiloRareza(codigo, isSelected)}
-                  title={`Ranking Global: #${rareza[codigo] || 'N/A'}`}
-                >
-                  {isSelected ? `✅ ${codigo}` : codigo}
-                </button>
-              );
-            })}
+        {/* COLUMNA DOY */}
+        <div style={{ flex: "1 1 300px", background: "rgba(0, 163, 224, 0.05)", padding: "15px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, textAlign: "center", fontSize: "0.9em" }}>📤 Tú Entregas</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "350px", overflowY: "auto" }}>
+            {misRepetidas.map(codigo => (
+              <button key={`doy-${codigo}`} onClick={() => toggleDoy(codigo)} style={getEstiloRareza(codigo, doy.includes(codigo))}>
+                {doy.includes(codigo) ? `✅ ${codigo}` : codigo}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* COLUMNA: LO QUE RECIBO */}
-        <div style={{ flex: "1 1 300px", background: "rgba(0, 177, 64, 0.1)", padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.green}` }}>
-          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.green, textAlign: "center", fontSize: "1em" }}>📥 Recibo (Faltantes)</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "350px", overflowY: "auto", padding: "5px" }}>
-            {misFaltantes.map(codigo => {
-              const isSelected = recibo.includes(codigo);
-              return (
-                <button 
-                  key={`recibo-${codigo}`}
-                  onClick={() => toggleRecibo(codigo)}
-                  style={getEstiloRareza(codigo, isSelected)}
-                  title={`Ranking Global: #${rareza[codigo] || 'N/A'}`}
-                >
-                  {isSelected ? `✅ ${codigo}` : codigo}
-                </button>
-              );
-            })}
+        {/* COLUMNA RECIBO */}
+        <div style={{ flex: "1 1 300px", background: "rgba(0, 177, 64, 0.05)", padding: "15px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.green, textAlign: "center", fontSize: "0.9em" }}>📥 Tú Recibes</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "350px", overflowY: "auto" }}>
+            {misFaltantes.map(codigo => (
+              <button key={`recibo-${codigo}`} onClick={() => toggleRecibo(codigo)} style={getEstiloRareza(codigo, recibo.includes(codigo))}>
+                {recibo.includes(codigo) ? `✅ ${codigo}` : codigo}
+              </button>
+            ))}
           </div>
         </div>
-
       </div>
 
+      {/* BARRA FLOTANTE DE CONFIRMACIÓN */}
       {(doy.length > 0 || recibo.length > 0) && (
-        <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "white", padding: "15px 25px", borderRadius: "50px", boxShadow: "0 10px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "20px", zIndex: 1000, border: `3px solid ${WC_COLORS.darkBlue}`, width: "90%", maxWidth: "500px", justifyContent: "space-between" }}>
+        <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "white", padding: "15px 20px", borderRadius: "50px", boxShadow: "0 10px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "10px", zIndex: 1000, border: `3px solid ${WC_COLORS.darkBlue}`, width: "95%", maxWidth: "600px", justifyContent: "space-between", flexWrap: "wrap" }}>
+          
           <div style={{ display: "flex", gap: "15px", fontWeight: "bold" }}>
             <span style={{ color: WC_COLORS.lightBlue }}>📤 {doy.length}</span>
             <span style={{ color: WC_COLORS.green }}>📥 {recibo.length}</span>
           </div>
-          <button onClick={ejecutarTrueque} style={{ background: WC_COLORS.darkBlue, color: "white", border: "none", padding: "10px 20px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", fontSize: "0.9em" }}>Confirmar Trueque</button>
+
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button 
+              onClick={descargarResumen} 
+              disabled={generandoImagen}
+              style={{ background: "#25D366", color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "0.9em" }}
+            >
+              {generandoImagen ? "⏳" : "📸 Imagen"}
+            </button>
+
+            <button 
+              onClick={ejecutarTrueque} 
+              style={{ background: WC_COLORS.darkBlue, color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", fontSize: "0.9em" }}
+            >
+              Confirmar
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* MODAL QR */}
+      {mostrarQR && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,32,91,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, backdropFilter: "blur(5px)" }}>
+          <div style={{ background: "white", padding: "30px", borderRadius: "24px", textAlign: "center", maxWidth: "320px" }}>
+            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mismonas.online/?match=${usuario.uid}`} alt="QR" style={{ width: "200px", marginBottom: "20px" }} />
+            <button onClick={() => setMostrarQR(false)} style={{ background: WC_COLORS.red, color: "white", width: "100%", padding: "12px", borderRadius: "10px", border: "none", fontWeight: "900" }}>Cerrar</button>
+          </div>
         </div>
       )}
 
