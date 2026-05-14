@@ -26,12 +26,18 @@ const WC_COLORS = {
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [nombreUsuario, setNombreUsuario] = useState('');
+  
+  // Mantiene la lógica de si vienes desde un QR
   const [pestaña, setPestaña] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.has('match') ? 'pvp' : 'album';
   });
+  
   const [publicaciones, setPublicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
+
+  // NUEVO: Estado para el botón de instalación
+  const [promptInstalacion, setPromptInstalacion] = useState(null);
 
   const EMAILS_ADMIN = ["miglio3929@gmail.com"]; 
   const esAdmin = usuario && EMAILS_ADMIN.includes(usuario.email);
@@ -58,6 +64,22 @@ function App() {
     return () => unsub();
   }, []);
 
+  // NUEVO: Escuchador del evento de instalación PWA
+  useEffect(() => {
+    const manejarAvisoInstalacion = (e) => {
+      // Previene que Chrome muestre su propio aviso feo
+      e.preventDefault();
+      // Guarda el evento en nuestro estado para usarlo en nuestro botón
+      setPromptInstalacion(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', manejarAvisoInstalacion);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', manejarAvisoInstalacion);
+    };
+  }, []);
+
   const cargarGlobal = async () => {
     try {
         const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
@@ -67,6 +89,20 @@ function App() {
   };
 
   useEffect(() => { if (usuario) cargarGlobal(); }, [usuario, pestaña]);
+
+  // NUEVA: Función que se ejecuta al presionar nuestro botón de Instalar
+  const instalarAplicacion = async () => {
+    if (promptInstalacion) {
+      // Muestra el aviso oficial de instalación del sistema operativo
+      promptInstalacion.prompt();
+      // Espera a que el usuario responda
+      const { outcome } = await promptInstalacion.userChoice;
+      // Si aceptó instalar, ocultamos el botón
+      if (outcome === 'accepted') {
+        setPromptInstalacion(null);
+      }
+    }
+  };
 
  if (cargando) return (
     <div style={{
@@ -144,7 +180,7 @@ function App() {
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", color: "#1e293b" }}>
       
       <header style={{ background: WC_COLORS.darkBlue, color: WC_COLORS.white, padding: "20px 0", borderBottom: `4px solid ${WC_COLORS.lime}`, boxShadow: "0 4px 15px rgba(0,0,0,0.15)" }}>
-        <div style={{ maxWidth: "1100px", margin: "auto", padding: "0 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ maxWidth: "1100px", margin: "auto", padding: "0 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px" }}>
           
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <div style={{ background: WC_COLORS.white, width: "45px", height: "45px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5em", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
@@ -158,12 +194,30 @@ function App() {
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-            <div style={{ textAlign: "right" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
+            
+            {/* NUEVO: BOTÓN DE INSTALAR (Solo aparece si el navegador lo permite y no está instalada) */}
+            {promptInstalacion && (
+              <button 
+                onClick={instalarAplicacion} 
+                style={{ 
+                  background: WC_COLORS.lime, color: WC_COLORS.darkBlue, 
+                  padding: "8px 15px", borderRadius: "8px", cursor: "pointer", 
+                  fontSize: "0.85em", fontWeight: "900", border: "none", 
+                  boxShadow: `0 4px 10px rgba(151, 215, 0, 0.4)`,
+                  display: "flex", alignItems: "center", gap: "5px",
+                  animation: "latido 2s infinite"
+                }}
+              >
+                📲 INSTALAR APP
+              </button>
+            )}
+
+            <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
               <div style={{ fontSize: "0.9em", fontWeight: "bold", textTransform: "capitalize" }}>
                 {nombreUsuario || usuario.email.split('@')[0]}
               </div>
-              {esAdmin && <span style={{ background: WC_COLORS.red, color: WC_COLORS.white, padding: "2px 8px", borderRadius: "4px", fontSize: "0.65em", fontWeight: "bold" }}>ADMIN</span>}
+              {esAdmin && <span style={{ background: WC_COLORS.red, color: WC_COLORS.white, padding: "2px 8px", borderRadius: "4px", fontSize: "0.65em", fontWeight: "bold", marginTop: "2px" }}>ADMIN</span>}
             </div>
             <button 
               onClick={() => signOut(auth)} 
@@ -177,6 +231,15 @@ function App() {
         </div>
       </header>
 
+      {/* Estilo CSS para que el botón de instalar llame la atención */}
+      <style>{`
+        @keyframes latido {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+
       <div style={{ maxWidth: "1100px", margin: "auto", padding: "0 20px" }}>
         <div style={{ background: "white", marginTop: "-20px", padding: "25px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", marginBottom: "40px" }}>
           
@@ -185,8 +248,6 @@ function App() {
             <button onClick={() => setPestaña('progreso')} style={estiloBoton('progreso')}>📈 Progreso</button>
             <button onClick={() => setPestaña('trueques')} style={estiloBoton('trueques')}>🤝 Intercambio</button>
             <button onClick={() => setPestaña('estadisticas')} style={estiloBoton('estadisticas')}>🌍 Mercado</button>
-            
-            {/* AQUÍ ESTÁ EL BOTÓN CORREGIDO */}
             <button onClick={() => setPestaña('pvp')} style={estiloBoton('pvp')}>🤝 PvP</button>
 
             {esAdmin && (
@@ -202,10 +263,7 @@ function App() {
             {pestaña === 'progreso' && <Progreso />}
             {pestaña === 'trueques' && <Trueques usuarioActual={usuario} />}
             {pestaña === 'estadisticas' && <Estadisticas />}
-            
-            {/* AQUÍ ESTÁ LA LÍNEA PARA MOSTRAR EL MÓDULO PVP */}
             {pestaña === 'pvp' && <PvP usuario={usuario} />}
-            
             {pestaña === 'mapa' && esAdmin && <MapaCiudades publicaciones={publicaciones} />}
             {pestaña === 'admin' && esAdmin && <Admin />}
           </main>
