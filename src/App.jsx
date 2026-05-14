@@ -26,7 +26,10 @@ const WC_COLORS = {
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [nombreUsuario, setNombreUsuario] = useState('');
-  const [pestaña, setPestaña] = useState('album');
+  const [pestaña, setPestaña] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('match') ? 'pvp' : 'album';
+  });
   const [publicaciones, setPublicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
 
