@@ -6,57 +6,58 @@ import html2canvas from 'html2canvas';
 
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
+// ORDEN PERSONALIZADO SINCRONIZADO CON EL ÁLBUM PRINCIPAL
 const seccionesAlbum = [
   { prefijo: "", nombre: "Especial Panini", bandera: "/logo_panini_especial.png", inicio: 0, fin: 0 },
   { prefijo: "FWC", nombre: "Especiales FIFA", bandera: "https://upload.wikimedia.org/wikipedia/commons/a/aa/FIFA_logo_without_slogan.svg", inicio: 1, fin: 20 },
-  { prefijo: "USA", nombre: "Estados Unidos", bandera: "https://flagcdn.com/w40/us.png", inicio: 1, fin: 20 },
   { prefijo: "MEX", nombre: "México", bandera: "https://flagcdn.com/w40/mx.png", inicio: 1, fin: 20 },
-  { prefijo: "CAN", nombre: "Canadá", bandera: "https://flagcdn.com/w40/ca.png", inicio: 1, fin: 20 },
-  { prefijo: "PAN", nombre: "Panamá", bandera: "https://flagcdn.com/w40/pa.png", inicio: 1, fin: 20 },
-  { prefijo: "HAI", nombre: "Haití", bandera: "https://flagcdn.com/w40/ht.png", inicio: 1, fin: 20 },
-  { prefijo: "CUW", nombre: "Curazao", bandera: "https://flagcdn.com/w40/cw.png", inicio: 1, fin: 20 },
-  { prefijo: "ARG", nombre: "Argentina", bandera: "https://flagcdn.com/w40/ar.png", inicio: 1, fin: 20 },
-  { prefijo: "BRA", nombre: "Brasil", bandera: "https://flagcdn.com/w40/br.png", inicio: 1, fin: 20 },
-  { prefijo: "COL", nombre: "Colombia", bandera: "https://flagcdn.com/w40/co.png", inicio: 1, fin: 20 },
-  { prefijo: "URU", nombre: "Uruguay", bandera: "https://flagcdn.com/w40/uy.png", inicio: 1, fin: 20 },
-  { prefijo: "ECU", nombre: "Ecuador", bandera: "https://flagcdn.com/w40/ec.png", inicio: 1, fin: 20 },
-  { prefijo: "PAR", nombre: "Paraguay", bandera: "https://flagcdn.com/w40/py.png", inicio: 1, fin: 20 },
-  { prefijo: "ESP", nombre: "España", bandera: "https://flagcdn.com/w40/es.png", inicio: 1, fin: 20 },
-  { prefijo: "ENG", nombre: "Inglaterra", bandera: "https://flagcdn.com/w40/gb-eng.png", inicio: 1, fin: 20 },
-  { prefijo: "FRA", nombre: "Francia", bandera: "https://flagcdn.com/w40/fr.png", inicio: 1, fin: 20 },
-  { prefijo: "GER", nombre: "Alemania", bandera: "https://flagcdn.com/w40/de.png", inicio: 1, fin: 20 },
-  { prefijo: "POR", nombre: "Portugal", bandera: "https://flagcdn.com/w40/pt.png", inicio: 1, fin: 20 },
-  { prefijo: "NED", nombre: "Países Bajos", bandera: "https://flagcdn.com/w40/nl.png", inicio: 1, fin: 20 },
-  { prefijo: "CRO", nombre: "Croacia", bandera: "https://flagcdn.com/w40/hr.png", inicio: 1, fin: 20 },
-  { prefijo: "BEL", nombre: "Bélgica", bandera: "https://flagcdn.com/w40/be.png", inicio: 1, fin: 20 },
-  { prefijo: "SUI", nombre: "Suiza", bandera: "https://flagcdn.com/w40/ch.png", inicio: 1, fin: 20 },
-  { prefijo: "AUT", nombre: "Austria", bandera: "https://flagcdn.com/w40/at.png", inicio: 1, fin: 20 },
-  { prefijo: "TUR", nombre: "Turquía", bandera: "https://flagcdn.com/w40/tr.png", inicio: 1, fin: 20 },
-  { prefijo: "BIH", nombre: "Bosnia", bandera: "https://flagcdn.com/w40/ba.png", inicio: 1, fin: 20 },
-  { prefijo: "SCO", nombre: "Escocia", bandera: "https://flagcdn.com/w40/gb-sct.png", inicio: 1, fin: 20 },
-  { prefijo: "SWE", nombre: "Suecia", bandera: "https://flagcdn.com/w40/se.png", inicio: 1, fin: 20 },
-  { prefijo: "NOR", nombre: "Noruega", bandera: "https://flagcdn.com/w40/no.png", inicio: 1, fin: 20 },
-  { prefijo: "CZE", nombre: "República Checa", bandera: "https://flagcdn.com/w40/cz.png", inicio: 1, fin: 20 },
-  { prefijo: "MAR", nombre: "Marruecos", bandera: "https://flagcdn.com/w40/ma.png", inicio: 1, fin: 20 },
-  { prefijo: "SEN", nombre: "Senegal", bandera: "https://flagcdn.com/w40/sn.png", inicio: 1, fin: 20 },
-  { prefijo: "EGY", nombre: "Egipto", bandera: "https://flagcdn.com/w40/eg.png", inicio: 1, fin: 20 },
-  { prefijo: "CIV", nombre: "Costa de Marfil", bandera: "https://flagcdn.com/w40/ci.png", inicio: 1, fin: 20 },
-  { prefijo: "ALG", nombre: "Argelia", bandera: "https://flagcdn.com/w40/dz.png", inicio: 1, fin: 20 },
-  { prefijo: "GHA", nombre: "Ghana", bandera: "https://flagcdn.com/w40/gh.png", inicio: 1, fin: 20 },
   { prefijo: "RSA", nombre: "Sudáfrica", bandera: "https://flagcdn.com/w40/za.png", inicio: 1, fin: 20 },
-  { prefijo: "TUN", nombre: "Túnez", bandera: "https://flagcdn.com/w40/tn.png", inicio: 1, fin: 20 },
-  { prefijo: "COD", nombre: "RD Congo", bandera: "https://flagcdn.com/w40/cd.png", inicio: 1, fin: 20 },
-  { prefijo: "CPV", nombre: "Cabo Verde", bandera: "https://flagcdn.com/w40/cv.png", inicio: 1, fin: 20 },
-  { prefijo: "JPN", nombre: "Japón", bandera: "https://flagcdn.com/w40/jp.png", inicio: 1, fin: 20 },
   { prefijo: "KOR", nombre: "Corea del Sur", bandera: "https://flagcdn.com/w40/kr.png", inicio: 1, fin: 20 },
-  { prefijo: "IRN", nombre: "Irán", bandera: "https://flagcdn.com/w40/ir.png", inicio: 1, fin: 20 },
-  { prefijo: "KSA", nombre: "Arabia Saudita", bandera: "https://flagcdn.com/w40/sa.png", inicio: 1, fin: 20 },
-  { prefijo: "AUS", nombre: "Australia", bandera: "https://flagcdn.com/w40/au.png", inicio: 1, fin: 20 },
+  { prefijo: "CZE", nombre: "República Checa", bandera: "https://flagcdn.com/w40/cz.png", inicio: 1, fin: 20 },
+  { prefijo: "CAN", nombre: "Canadá", bandera: "https://flagcdn.com/w40/ca.png", inicio: 1, fin: 20 },
+  { prefijo: "BIH", nombre: "Bosnia y Herzegovina", bandera: "https://flagcdn.com/w40/ba.png", inicio: 1, fin: 20 },
   { prefijo: "QAT", nombre: "Qatar", bandera: "https://flagcdn.com/w40/qa.png", inicio: 1, fin: 20 },
-  { prefijo: "IRQ", nombre: "Irak", bandera: "https://flagcdn.com/w40/iq.png", inicio: 1, fin: 20 },
-  { prefijo: "JOR", nombre: "Jordania", bandera: "https://flagcdn.com/w40/jo.png", inicio: 1, fin: 20 },
-  { prefijo: "UZB", nombre: "Uzbekistán", bandera: "https://flagcdn.com/w40/uz.png", inicio: 1, fin: 20 },
+  { prefijo: "SUI", nombre: "Suiza", bandera: "https://flagcdn.com/w40/ch.png", inicio: 1, fin: 20 },
+  { prefijo: "BRA", nombre: "Brasil", bandera: "https://flagcdn.com/w40/br.png", inicio: 1, fin: 20 },
+  { prefijo: "MAR", nombre: "Marruecos", bandera: "https://flagcdn.com/w40/ma.png", inicio: 1, fin: 20 },
+  { prefijo: "HAI", nombre: "Haití", bandera: "https://flagcdn.com/w40/ht.png", inicio: 1, fin: 20 },
+  { prefijo: "SCO", nombre: "Escocia", bandera: "https://flagcdn.com/w40/gb-sct.png", inicio: 1, fin: 20 },
+  { prefijo: "USA", nombre: "Estados Unidos", bandera: "https://flagcdn.com/w40/us.png", inicio: 1, fin: 20 },
+  { prefijo: "PAR", nombre: "Paraguay", bandera: "https://flagcdn.com/w40/py.png", inicio: 1, fin: 20 },
+  { prefijo: "AUS", nombre: "Australia", bandera: "https://flagcdn.com/w40/au.png", inicio: 1, fin: 20 },
+  { prefijo: "TUR", nombre: "Turquía", bandera: "https://flagcdn.com/w40/tr.png", inicio: 1, fin: 20 },
+  { prefijo: "GER", nombre: "Alemania", bandera: "https://flagcdn.com/w40/de.png", inicio: 1, fin: 20 },
+  { prefijo: "CUW", nombre: "Curazao", bandera: "https://flagcdn.com/w40/cw.png", inicio: 1, fin: 20 },
+  { prefijo: "CIV", nombre: "Costa de Marfil", bandera: "https://flagcdn.com/w40/ci.png", inicio: 1, fin: 20 },
+  { prefijo: "ECU", nombre: "Ecuador", bandera: "https://flagcdn.com/w40/ec.png", inicio: 1, fin: 20 },
+  { prefijo: "NED", nombre: "Países Bajos", bandera: "https://flagcdn.com/w40/nl.png", inicio: 1, fin: 20 },
+  { prefijo: "JPN", nombre: "Japón", bandera: "https://flagcdn.com/w40/jp.png", inicio: 1, fin: 20 },
+  { prefijo: "SWE", nombre: "Suecia", bandera: "https://flagcdn.com/w40/se.png", inicio: 1, fin: 20 },
+  { prefijo: "TUN", nombre: "Túnez", bandera: "https://flagcdn.com/w40/tn.png", inicio: 1, fin: 20 },
+  { prefijo: "BEL", nombre: "Bélgica", bandera: "https://flagcdn.com/w40/be.png", inicio: 1, fin: 20 },
+  { prefijo: "EGY", nombre: "Egipto", bandera: "https://flagcdn.com/w40/eg.png", inicio: 1, fin: 20 },
+  { prefijo: "IRN", nombre: "Irán", bandera: "https://flagcdn.com/w40/ir.png", inicio: 1, fin: 20 },
   { prefijo: "NZL", nombre: "Nueva Zelanda", bandera: "https://flagcdn.com/w40/nz.png", inicio: 1, fin: 20 },
+  { prefijo: "ESP", nombre: "España", bandera: "https://flagcdn.com/w40/es.png", inicio: 1, fin: 20 },
+  { prefijo: "CPV", nombre: "Cabo Verde", bandera: "https://flagcdn.com/w40/cv.png", inicio: 1, fin: 20 },
+  { prefijo: "KSA", nombre: "Arabia Saudita", bandera: "https://flagcdn.com/w40/sa.png", inicio: 1, fin: 20 },
+  { prefijo: "URU", nombre: "Uruguay", bandera: "https://flagcdn.com/w40/uy.png", inicio: 1, fin: 20 },
+  { prefijo: "FRA", nombre: "Francia", bandera: "https://flagcdn.com/w40/fr.png", inicio: 1, fin: 20 },
+  { prefijo: "SEN", nombre: "Senegal", bandera: "https://flagcdn.com/w40/sn.png", inicio: 1, fin: 20 },
+  { prefijo: "IRQ", nombre: "Irak", bandera: "https://flagcdn.com/w40/iq.png", inicio: 1, fin: 20 },
+  { prefijo: "NOR", nombre: "Noruega", bandera: "https://flagcdn.com/w40/no.png", inicio: 1, fin: 20 },
+  { prefijo: "ARG", nombre: "Argentina", bandera: "https://flagcdn.com/w40/ar.png", inicio: 1, fin: 20 },
+  { prefijo: "ALG", nombre: "Argelia", bandera: "https://flagcdn.com/w40/dz.png", inicio: 1, fin: 20 },
+  { prefijo: "AUT", nombre: "Austria", bandera: "https://flagcdn.com/w40/at.png", inicio: 1, fin: 20 },
+  { prefijo: "JOR", nombre: "Jordania", bandera: "https://flagcdn.com/w40/jo.png", inicio: 1, fin: 20 },
+  { prefijo: "POR", nombre: "Portugal", bandera: "https://flagcdn.com/w40/pt.png", inicio: 1, fin: 20 },
+  { prefijo: "COD", nombre: "RD Congo", bandera: "https://flagcdn.com/w40/cd.png", inicio: 1, fin: 20 },
+  { prefijo: "UZB", nombre: "Uzbekistán", bandera: "https://flagcdn.com/w40/uz.png", inicio: 1, fin: 20 },
+  { prefijo: "COL", nombre: "Colombia", bandera: "https://flagcdn.com/w40/co.png", inicio: 1, fin: 20 },
+  { prefijo: "ENG", nombre: "Inglaterra", bandera: "https://flagcdn.com/w40/gb-eng.png", inicio: 1, fin: 20 },
+  { prefijo: "CRO", nombre: "Croacia", bandera: "https://flagcdn.com/w40/hr.png", inicio: 1, fin: 20 },
+  { prefijo: "GHA", nombre: "Ghana", bandera: "https://flagcdn.com/w40/gh.png", inicio: 1, fin: 20 },
+  { prefijo: "PAN", nombre: "Panamá", bandera: "https://flagcdn.com/w40/pa.png", inicio: 1, fin: 20 },
   { prefijo: "CC", nombre: "Coca-Cola", bandera: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg", inicio: 1, fin: 14 }
 ];
 
@@ -72,7 +73,6 @@ function PvP({ usuario }) {
   const [mostrarQR, setMostrarQR] = useState(false);
   const [matchUid, setMatchUid] = useState(() => new URLSearchParams(window.location.search).get('match'));
 
-  // REFERENCIAS PARA LA IMAGEN DESCARGABLE
   const reciboRef = useRef(null);
   const [generandoImagen, setGenerandoImagen] = useState(false);
 
@@ -150,6 +150,7 @@ function PvP({ usuario }) {
   let misRepetidas = [];
   let misFaltantes = [];
 
+  // Se mantiene el orden natural del álbum (sin desordenar por cantidad)
   seccionesAlbum.forEach(seccion => {
     for (let i = seccion.inicio; i <= seccion.fin; i++) {
       let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
@@ -164,7 +165,7 @@ function PvP({ usuario }) {
 
   const procesarListaPegada = () => {
     if (!listaPegada.trim()) {
-      alert("⚠️ Pega una lista de WhatsApp primero.");
+      alert("Atencion: Pega una lista de WhatsApp primero.");
       return;
     }
 
@@ -219,12 +220,12 @@ function PvP({ usuario }) {
     });
 
     if (autoDoy.length === 0 && autoRecibo.length === 0) {
-        alert("😕 No encontramos ningún match. Sus faltantes/repetidas no coinciden con las tuyas.");
+        alert("No encontramos ningun match. Sus faltantes o repetidas no coinciden con las tuyas.");
     } else {
         setDoy(autoDoy);
         setRecibo(autoRecibo);
         setListaPegada('');
-        alert(`✨ ¡Match encontrado! Entregas ${autoDoy.length} y recibes ${autoRecibo.length}.`);
+        alert(`Match encontrado! Entregas ${autoDoy.length} y recibes ${autoRecibo.length}.`);
     }
   };
 
@@ -253,16 +254,16 @@ function PvP({ usuario }) {
       background: bgColor,
       color: textColor,
       border: isSelected ? "3px solid #0f172a" : `1px solid ${bgColor}`,
-      height: "45px",
-      borderRadius: "8px", fontWeight: "900", cursor: "pointer",
-      fontSize: "clamp(0.7em, 3.2vw, 0.9em)", display: "flex", alignItems: "center", justifyContent: "center",
+      height: "48px",
+      borderRadius: "8px", cursor: "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center",
       transition: "0.2s"
     };
   };
 
   const ejecutarTrueque = async () => {
-    if (doy.length === 0 || recibo.length === 0) { alert("⚠️ Selecciona al menos una mona para dar y una para recibir."); return; }
-    const confirmacion = window.confirm(`🤝 ¿Confirmas el trueque?\n\nEntregas: ${doy.join(", ")}\nRecibes: ${recibo.join(", ")}`);
+    if (doy.length === 0 || recibo.length === 0) { alert("Selecciona al menos una mona para dar y una para recibir."); return; }
+    const confirmacion = window.confirm(`Confirmas el trueque?\n\nEntregas: ${doy.join(", ")}\nRecibes: ${recibo.join(", ")}`);
     if (!confirmacion) return;
 
     setCargando(true);
@@ -294,7 +295,7 @@ function PvP({ usuario }) {
             recibo.forEach(codigo => { actualizacionesOtro[codigo] = Math.max(0, (invOtro[codigo] || 0) - 1); });
             await updateDoc(otroRef, actualizacionesOtro);
           }
-        } catch (e) { console.warn("No se pudo actualizar el álbum del otro usuario."); }
+        } catch (e) { console.warn("No se pudo actualizar el album del otro usuario."); }
         window.history.replaceState(null, '', window.location.pathname);
         setMatchUid(null);
       }
@@ -303,21 +304,20 @@ function PvP({ usuario }) {
       setDoy([]);
       setRecibo([]);
       setBusqueda('');
-      alert("✅ ¡Trueque exitoso! Inventarios actualizados.");
+      alert("Trueque exitoso! Inventarios actualizados.");
     } catch (error) {
       console.error(error);
-      alert("❌ Error al guardar el trueque.");
+      alert("Error al guardar el trueque.");
     }
     setCargando(false);
   };
 
-  // NUEVA FUNCIÓN PARA GENERAR IMAGEN DESCARGABLE
   const descargarResumen = async () => {
     if (!reciboRef.current) return;
     setGenerandoImagen(true);
     try {
       const canvas = await html2canvas(reciboRef.current, {
-        scale: 2, // Para que la imagen quede en alta resolución
+        scale: 2,
         backgroundColor: null,
         useCORS: true
       });
@@ -328,17 +328,16 @@ function PvP({ usuario }) {
       link.click();
     } catch (error) {
       console.error("Error generando la imagen", error);
-      alert("❌ Ocurrió un error al generar la imagen.");
+      alert("Ocurrio un error al generar la imagen.");
     }
     setGenerandoImagen(false);
   };
 
-  if (cargando) return <div style={{ textAlign: "center", marginTop: "50px", color: WC_COLORS.darkBlue }}>🔄 Analizando mercado y rarezas...</div>;
+  if (cargando) return <div style={{ textAlign: "center", marginTop: "50px", color: WC_COLORS.darkBlue }}>Analizando mercado y rarezas...</div>;
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px", margin: "auto", padding: "10px", paddingBottom: "100px" }}>
       
-      {/* ---------------- TICKET OCULTO PARA LA FOTO ---------------- */}
       <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
         <div ref={reciboRef} style={{ width: "450px", background: `linear-gradient(135deg, ${WC_COLORS.darkBlue}, #001233)`, color: "white", padding: "30px", borderRadius: "20px", fontFamily: "'Inter', sans-serif" }}>
           
@@ -346,12 +345,12 @@ function PvP({ usuario }) {
             <h2 style={{ margin: "0", fontSize: "2.5em", fontWeight: "900", letterSpacing: "-1px" }}>
               Mis<span style={{ color: WC_COLORS.lime }}>Monas</span>
             </h2>
-            <p style={{ margin: "5px 0 0 0", fontSize: "1.1em", color: WC_COLORS.lightBlue, textTransform: "uppercase", fontWeight: "bold" }}>Propuesta de Trueque 🤝</p>
+            <p style={{ margin: "5px 0 0 0", fontSize: "1.1em", color: WC_COLORS.lightBlue, textTransform: "uppercase", fontWeight: "bold" }}>Propuesta de Trueque</p>
           </div>
 
           <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "20px", marginBottom: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.3)" }}>
             <h3 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "1.2em", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px" }}>
-              📤 Yo Entrego <span style={{ color: WC_COLORS.red }}>({doy.length})</span>
+              Yo Entrego <span style={{ color: WC_COLORS.red }}>({doy.length})</span>
             </h3>
             <p style={{ margin: 0, fontSize: "1.2em", fontWeight: "bold", color: "#334155", wordWrap: "break-word", lineHeight: "1.5" }}>
               {doy.length > 0 ? doy.join(", ") : "Ninguna"}
@@ -360,7 +359,7 @@ function PvP({ usuario }) {
 
           <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.3)" }}>
             <h3 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "1.2em", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px" }}>
-              📥 Yo Recibo <span style={{ color: WC_COLORS.green }}>({recibo.length})</span>
+              Yo Recibo <span style={{ color: WC_COLORS.green }}>({recibo.length})</span>
             </h3>
             <p style={{ margin: 0, fontSize: "1.2em", fontWeight: "bold", color: "#334155", wordWrap: "break-word", lineHeight: "1.5" }}>
               {recibo.length > 0 ? recibo.join(", ") : "Ninguna"}
@@ -368,28 +367,26 @@ function PvP({ usuario }) {
           </div>
 
           <div style={{ textAlign: "center", marginTop: "25px", borderTop: "1px dashed rgba(255,255,255,0.3)", paddingTop: "15px" }}>
-            <p style={{ margin: "0 0 5px 0", fontSize: "1.2em", fontWeight: "bold", color: WC_COLORS.lime }}>¿Hagamos el cambio? ⚽</p>
-            <p style={{ margin: 0, fontSize: "0.9em", color: "white", opacity: 0.8 }}>Escanea mi código en: mismonas.online</p>
+            <p style={{ margin: "0 0 5px 0", fontSize: "1.2em", fontWeight: "bold", color: WC_COLORS.lime }}>Hagamos el cambio?</p>
+            <p style={{ margin: "0 0 5px 0", fontSize: "1em", color: "white", fontWeight: "bold" }}>Gestiona tu album gratis en:</p>
+            <p style={{ margin: 0, fontSize: "1.3em", color: WC_COLORS.lightBlue, fontWeight: "900", letterSpacing: "1px" }}>mismonas.online</p>
           </div>
         </div>
       </div>
-      {/* ------------------------------------------------------------ */}
-
 
       <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "25px" }}>
         <button 
           onClick={() => setMostrarQR(true)}
           style={{ background: WC_COLORS.darkBlue, color: "white", padding: "12px 20px", borderRadius: "30px", border: "none", fontWeight: "900", cursor: "pointer" }}
         >
-          📷 Mi QR
+          Mi QR de Cambio
         </button>
       </div>
 
-      {/* ÁREA DE PEGADO INTELIGENTE */}
       <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lime}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
-        <h4 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>📋 Análisis Rápido de Lista</h4>
+        <h4 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>Analisis Rapido de Lista</h4>
         <textarea 
-          placeholder="Pega aquí la lista que te enviaron por WhatsApp..."
+          placeholder="Pega aqui la lista que te enviaron por WhatsApp..."
           value={listaPegada}
           onChange={(e) => setListaPegada(e.target.value)}
           style={{ width: "100%", height: "80px", borderRadius: "10px", border: "1px solid #e2e8f0", padding: "10px", fontSize: "0.9em", resize: "none", marginBottom: "10px", fontFamily: "inherit" }}
@@ -398,60 +395,63 @@ function PvP({ usuario }) {
           onClick={procesarListaPegada}
           style={{ width: "100%", background: WC_COLORS.green, color: "white", border: "none", padding: "12px", borderRadius: "10px", fontWeight: "900", cursor: "pointer", textTransform: "uppercase" }}
         >
-          ⚡ Generar Trueque Automático
+          Generar Trueque Automatico
         </button>
       </div>
 
-      {/* LEYENDA RAREZA */}
       <div style={{ background: "white", padding: "10px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", fontSize: "0.7em" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#7f1d1d", borderRadius: "2px" }}></span> Mítica</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#7f1d1d", borderRadius: "2px" }}></span> Mitica</div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: WC_COLORS.red, borderRadius: "2px" }}></span> Escasa</div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#f97316", borderRadius: "2px" }}></span> Buscada</div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: "#facc15", borderRadius: "2px" }}></span> Normal</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: WC_COLORS.lime, borderRadius: "2px" }}></span> Común</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", background: WC_COLORS.lime, borderRadius: "2px" }}></span> Comun</div>
       </div>
 
       <input 
         type="text" 
-        placeholder="🔍 Búsqueda manual (ARG, COL...)" 
+        placeholder="Busqueda manual (ARG, COL...)" 
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value.toUpperCase().trim())}
         style={{ width: "100%", padding: "15px", borderRadius: "12px", border: `2px solid ${WC_COLORS.darkBlue}`, fontSize: "1.1em", boxSizing: "border-box", marginBottom: "20px" }}
       />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-        {/* COLUMNA DOY */}
         <div style={{ flex: "1 1 300px", background: "rgba(0, 163, 224, 0.05)", padding: "15px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, textAlign: "center", fontSize: "0.9em" }}>📤 Tú Entregas</h3>
+          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, textAlign: "center", fontSize: "0.9em" }}>Tu Entregas</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "350px", overflowY: "auto" }}>
             {misRepetidas.map(codigo => (
               <button key={`doy-${codigo}`} onClick={() => toggleDoy(codigo)} style={getEstiloRareza(codigo, doy.includes(codigo))}>
-                {doy.includes(codigo) ? `✅ ${codigo}` : codigo}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: "1.1" }}>
+                   <span style={{ fontWeight: "900", fontSize: "clamp(0.75em, 3.2vw, 0.95em)" }}>
+                     {doy.includes(codigo) ? `✅ ${codigo}` : codigo}
+                   </span>
+                   <span style={{ fontSize: "0.75em", opacity: 0.85 }}>x{inventario[codigo]}</span>
+                </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* COLUMNA RECIBO */}
         <div style={{ flex: "1 1 300px", background: "rgba(0, 177, 64, 0.05)", padding: "15px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.green, textAlign: "center", fontSize: "0.9em" }}>📥 Tú Recibes</h3>
+          <h3 style={{ margin: "0 0 15px 0", color: WC_COLORS.green, textAlign: "center", fontSize: "0.9em" }}>Tu Recibes</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "350px", overflowY: "auto" }}>
             {misFaltantes.map(codigo => (
               <button key={`recibo-${codigo}`} onClick={() => toggleRecibo(codigo)} style={getEstiloRareza(codigo, recibo.includes(codigo))}>
-                {recibo.includes(codigo) ? `✅ ${codigo}` : codigo}
+                <span style={{ fontWeight: "900", fontSize: "clamp(0.75em, 3.2vw, 0.95em)" }}>
+                  {recibo.includes(codigo) ? `✅ ${codigo}` : codigo}
+                </span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* BARRA FLOTANTE DE CONFIRMACIÓN */}
       {(doy.length > 0 || recibo.length > 0) && (
         <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "white", padding: "15px 20px", borderRadius: "50px", boxShadow: "0 10px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "10px", zIndex: 1000, border: `3px solid ${WC_COLORS.darkBlue}`, width: "95%", maxWidth: "600px", justifyContent: "space-between", flexWrap: "wrap" }}>
           
           <div style={{ display: "flex", gap: "15px", fontWeight: "bold" }}>
-            <span style={{ color: WC_COLORS.lightBlue }}>📤 {doy.length}</span>
-            <span style={{ color: WC_COLORS.green }}>📥 {recibo.length}</span>
+            <span style={{ color: WC_COLORS.lightBlue }}>Doy: {doy.length}</span>
+            <span style={{ color: WC_COLORS.green }}>Recibo: {recibo.length}</span>
           </div>
 
           <div style={{ display: "flex", gap: "8px" }}>
@@ -460,7 +460,7 @@ function PvP({ usuario }) {
               disabled={generandoImagen}
               style={{ background: "#25D366", color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "0.9em" }}
             >
-              {generandoImagen ? "⏳" : "📸 Imagen"}
+              {generandoImagen ? "Cargando..." : "Imagen"}
             </button>
 
             <button 
@@ -474,11 +474,20 @@ function PvP({ usuario }) {
         </div>
       )}
 
-      {/* MODAL QR */}
       {mostrarQR && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,32,91,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, backdropFilter: "blur(5px)" }}>
           <div style={{ background: "white", padding: "30px", borderRadius: "24px", textAlign: "center", maxWidth: "320px" }}>
-            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mismonas.online/?match=${usuario.uid}`} alt="QR" style={{ width: "200px", marginBottom: "20px" }} />
+            <h3 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontSize: "1.6em", fontWeight: "900" }}>Mi Codigo QR</h3>
+            
+            <div style={{ background: "white", padding: "10px", borderRadius: "16px", border: "3px dashed " + WC_COLORS.lightBlue, display: "inline-block", marginBottom: "15px" }}>
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mismonas.online/?match=${usuario.uid}`} alt="QR" style={{ width: "200px", height: "200px", display: "block" }} />
+            </div>
+            
+            <div style={{ background: "#f1f5f9", padding: "10px", borderRadius: "10px", marginBottom: "20px" }}>
+              <p style={{ margin: "0 0 5px 0", fontSize: "0.85em", color: WC_COLORS.darkBlue, fontWeight: "bold" }}>Descarga la app en:</p>
+              <p style={{ margin: 0, fontSize: "1.2em", color: WC_COLORS.green, fontWeight: "900" }}>mismonas.online</p>
+            </div>
+
             <button onClick={() => setMostrarQR(false)} style={{ background: WC_COLORS.red, color: "white", width: "100%", padding: "12px", borderRadius: "10px", border: "none", fontWeight: "900" }}>Cerrar</button>
           </div>
         </div>
