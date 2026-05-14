@@ -1,12 +1,11 @@
 // src/PvP.jsx
 import { useState, useEffect, useRef } from 'react';
 import { db } from './firebase';
-import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import html2canvas from 'html2canvas';
 
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
-// ORDEN PERSONALIZADO SINCRONIZADO CON EL ÁLBUM PRINCIPAL
 const seccionesAlbum = [
   { prefijo: "", nombre: "Especial Panini", bandera: "/logo_panini_especial.png", inicio: 0, fin: 0 },
   { prefijo: "FWC", nombre: "Especiales FIFA", bandera: "https://upload.wikimedia.org/wikipedia/commons/a/aa/FIFA_logo_without_slogan.svg", inicio: 1, fin: 20 },
@@ -73,6 +72,11 @@ function PvP({ usuario }) {
   const [mostrarQR, setMostrarQR] = useState(false);
   const [matchUid, setMatchUid] = useState(() => new URLSearchParams(window.location.search).get('match'));
 
+  const [pendientes, setPendientes] = useState([]);
+  
+  // NUEVO ESTADO: Para saber si estamos editando un trueque existente
+  const [editandoId, setEditandoId] = useState(null);
+
   const reciboRef = useRef(null);
   const [generandoImagen, setGenerandoImagen] = useState(false);
 
@@ -85,6 +89,16 @@ function PvP({ usuario }) {
         miInv = docSnap.data();
         setInventario(miInv);
       }
+
+      const qPendientes = query(collection(db, "trueques"), where("creador", "==", usuario.uid));
+      const snapPendientes = await getDocs(qPendientes);
+      const listaPendientes = [];
+      snapPendientes.forEach(d => {
+        if (d.data().estado === 'pendiente') {
+          listaPendientes.push({ id: d.id, ...d.data() });
+        }
+      });
+      setPendientes(listaPendientes);
 
       if (matchUid && matchUid !== usuario.uid) {
         const otroRef = doc(db, "inventarios", matchUid);
@@ -150,7 +164,6 @@ function PvP({ usuario }) {
   let misRepetidas = [];
   let misFaltantes = [];
 
-  // Se mantiene el orden natural del álbum (sin desordenar por cantidad)
   seccionesAlbum.forEach(seccion => {
     for (let i = seccion.inicio; i <= seccion.fin; i++) {
       let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
@@ -261,9 +274,139 @@ function PvP({ usuario }) {
     };
   };
 
-  const ejecutarTrueque = async () => {
+  // NUEVO: Función combinada para guardar uno nuevo o actualizar uno existente
+  const guardarOActualizarPendiente = async () => {
     if (doy.length === 0 || recibo.length === 0) { alert("Selecciona al menos una mona para dar y una para recibir."); return; }
-    const confirmacion = window.confirm(`Confirmas el trueque?\n\nEntregas: ${doy.join(", ")}\nRecibes: ${recibo.join(", ")}`);
+    
+    setCargando(true);
+    try {
+      if (editandoId) {
+        // ACTUALIZAR EXISTENTE
+        await updateDoc(doc(db, "trueques", editandoId), {
+          doy: doy,
+          recibo: recibo,
+          fechaActualizacion: new Date().toISOString()
+        });
+        
+        setPendientes(pendientes.map(p => p.id === editandoId ? { ...p, doy, recibo } : p));
+        alert("✅ Propuesta de trueque actualizada.");
+      } else {
+        // CREAR NUEVO
+        const nuevoTrueque = {
+          creador: usuario.uid,
+          matchUid: matchUid || null,
+          doy: doy,
+          recibo: recibo,
+          estado: "pendiente",
+          fecha: new Date().toISOString()
+        };
+        
+        const docRef = await addDoc(collection(db, "trueques"), nuevoTrueque);
+        setPendientes([...pendientes, { id: docRef.id, ...nuevoTrueque }]);
+        
+        if (matchUid) {
+          window.history.replaceState(null, '', window.location.pathname);
+          setMatchUid(null);
+        }
+        alert("⏳ Trueque guardado en Pendientes.");
+      }
+
+      // Limpiar mesa de trabajo
+      setDoy([]);
+      setRecibo([]);
+      setBusqueda('');
+      setEditandoId(null);
+      
+    } catch (error) {
+      console.error(error);
+      alert("Error al guardar/actualizar el trueque.");
+    }
+    setCargando(false);
+  };
+
+  const confirmarTruequePendiente = async (trueque) => {
+    const confirmacion = window.confirm(`¿Confirmas que ya intercambiaste estas monas físicamente y deseas descontarlas de tu inventario?`);
+    if (!confirmacion) return;
+
+    setCargando(true);
+    const nuevoInventario = { ...inventario };
+    const actualizaciones = {};
+
+    trueque.doy.forEach(codigo => {
+      nuevoInventario[codigo] = (nuevoInventario[codigo] || 0) - 1;
+      actualizaciones[codigo] = nuevoInventario[codigo];
+    });
+
+    trueque.recibo.forEach(codigo => {
+      nuevoInventario[codigo] = (nuevoInventario[codigo] || 0) + 1;
+      actualizaciones[codigo] = nuevoInventario[codigo];
+    });
+
+    try {
+      const docRef = doc(db, "inventarios", usuario.uid);
+      await updateDoc(docRef, actualizaciones);
+
+      if (trueque.matchUid) {
+        try {
+          const otroRef = doc(db, "inventarios", trueque.matchUid);
+          const otroSnap = await getDoc(otroRef);
+          if (otroSnap.exists()) {
+            let invOtro = otroSnap.data();
+            let actualizacionesOtro = {};
+            trueque.doy.forEach(codigo => { actualizacionesOtro[codigo] = (invOtro[codigo] || 0) + 1; });
+            trueque.recibo.forEach(codigo => { actualizacionesOtro[codigo] = Math.max(0, (invOtro[codigo] || 0) - 1); });
+            await updateDoc(otroRef, actualizacionesOtro);
+          }
+        } catch (e) { console.warn("No se pudo actualizar el album del otro usuario."); }
+      }
+
+      await updateDoc(doc(db, "trueques", trueque.id), { estado: "completado" });
+
+      setInventario(nuevoInventario);
+      setPendientes(pendientes.filter(p => p.id !== trueque.id));
+      alert("✅ ¡Inventarios actualizados con éxito!");
+    } catch (error) {
+      console.error(error);
+      alert("Error al confirmar el trueque.");
+    }
+    setCargando(false);
+  };
+
+  const cancelarPendiente = async (id) => {
+    if(!window.confirm("¿Deseas eliminar esta propuesta pendiente?")) return;
+    setCargando(true);
+    try {
+      await updateDoc(doc(db, "trueques", id), { estado: "cancelado" });
+      setPendientes(pendientes.filter(p => p.id !== id));
+      if (editandoId === id) {
+        setEditandoId(null);
+        setDoy([]);
+        setRecibo([]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setCargando(false);
+  };
+
+  // NUEVO: Función para cargar los datos del trueque a editar a la mesa de trabajo
+  const editarPendiente = (trueque) => {
+    setDoy([...trueque.doy]);
+    setRecibo([...trueque.recibo]);
+    setEditandoId(trueque.id);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  // NUEVO: Función para cancelar la edición sin guardar
+  const cancelarEdicion = () => {
+    setDoy([]);
+    setRecibo([]);
+    setEditandoId(null);
+  };
+
+  const ejecutarTruequeInmediato = async () => {
+    if (doy.length === 0 || recibo.length === 0) { alert("Selecciona al menos una mona para dar y una para recibir."); return; }
+    const confirmacion = window.confirm(`Confirmas el trueque inmediato?\n\nEntregas: ${doy.join(", ")}\nRecibes: ${recibo.join(", ")}`);
     if (!confirmacion) return;
 
     setCargando(true);
@@ -304,6 +447,7 @@ function PvP({ usuario }) {
       setDoy([]);
       setRecibo([]);
       setBusqueda('');
+      setEditandoId(null);
       alert("Trueque exitoso! Inventarios actualizados.");
     } catch (error) {
       console.error(error);
@@ -338,6 +482,7 @@ function PvP({ usuario }) {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px", margin: "auto", padding: "10px", paddingBottom: "100px" }}>
       
+      {/* TICKET OCULTO */}
       <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
         <div ref={reciboRef} style={{ width: "450px", background: `linear-gradient(135deg, ${WC_COLORS.darkBlue}, #001233)`, color: "white", padding: "30px", borderRadius: "20px", fontFamily: "'Inter', sans-serif" }}>
           
@@ -382,6 +527,37 @@ function PvP({ usuario }) {
           Mi QR de Cambio
         </button>
       </div>
+
+      {/* BANDEJA DE TRUEQUES PENDIENTES CON BOTÓN DE EDITAR */}
+      {pendientes.length > 0 && (
+        <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lightBlue}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+          <h4 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, fontSize: "0.95em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
+            ⏳ Trueques Pendientes <span style={{background: WC_COLORS.red, color: "white", padding: "2px 8px", borderRadius: "10px", fontSize: "0.8em"}}>{pendientes.length}</span>
+          </h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "250px", overflowY: "auto" }}>
+            {pendientes.map(p => (
+              <div key={p.id} style={{ background: editandoId === p.id ? "rgba(0, 163, 224, 0.1)" : "#f8fafc", padding: "12px", borderRadius: "10px", border: editandoId === p.id ? `2px solid ${WC_COLORS.lightBlue}` : "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <div style={{ fontSize: "0.85em", color: WC_COLORS.darkBlue, marginBottom: "4px" }}><b>📤 Entregas:</b> {p.doy.join(", ")}</div>
+                  <div style={{ fontSize: "0.85em", color: WC_COLORS.green }}><b>📥 Recibes:</b> {p.recibo.join(", ")}</div>
+                </div>
+                <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                  <button onClick={() => cancelarPendiente(p.id)} style={{ background: "white", color: WC_COLORS.red, border: `1px solid ${WC_COLORS.red}`, padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em" }}>Cancelar</button>
+                  <button onClick={() => editarPendiente(p)} style={{ background: "white", color: WC_COLORS.lightBlue, border: `1px solid ${WC_COLORS.lightBlue}`, padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em" }}>✏️ Editar</button>
+                  <button onClick={() => confirmarTruequePendiente(p)} style={{ background: WC_COLORS.green, color: "white", border: "none", padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>✅ Completar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AVISO DE EDICIÓN ACTIVA */}
+      {editandoId && (
+        <div style={{ background: WC_COLORS.lightBlue, color: "white", padding: "15px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", fontWeight: "bold" }}>
+          ✏️ Estás editando una propuesta pendiente. Selecciona las monas y guarda los cambios.
+        </div>
+      )}
 
       <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lime}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
         <h4 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>Analisis Rapido de Lista</h4>
@@ -446,29 +622,51 @@ function PvP({ usuario }) {
         </div>
       </div>
 
+      {/* BARRA FLOTANTE DINÁMICA (CAMBIA SI ESTÁ EDITANDO) */}
       {(doy.length > 0 || recibo.length > 0) && (
-        <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "white", padding: "15px 20px", borderRadius: "50px", boxShadow: "0 10px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "10px", zIndex: 1000, border: `3px solid ${WC_COLORS.darkBlue}`, width: "95%", maxWidth: "600px", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "white", padding: "15px 20px", borderRadius: "50px", boxShadow: "0 10px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "10px", zIndex: 1000, border: editandoId ? `3px solid ${WC_COLORS.lightBlue}` : `3px solid ${WC_COLORS.darkBlue}`, width: "95%", maxWidth: "700px", justifyContent: "space-between", flexWrap: "wrap" }}>
           
           <div style={{ display: "flex", gap: "15px", fontWeight: "bold" }}>
             <span style={{ color: WC_COLORS.lightBlue }}>Doy: {doy.length}</span>
             <span style={{ color: WC_COLORS.green }}>Recibo: {recibo.length}</span>
           </div>
 
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button 
-              onClick={descargarResumen} 
-              disabled={generandoImagen}
-              style={{ background: "#25D366", color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "0.9em" }}
-            >
-              {generandoImagen ? "Cargando..." : "Imagen"}
-            </button>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {!editandoId && (
+              <button 
+                onClick={descargarResumen} 
+                disabled={generandoImagen}
+                style={{ background: "#25D366", color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "0.9em" }}
+              >
+                {generandoImagen ? "Cargando..." : "Imagen"}
+              </button>
+            )}
+
+            {editandoId && (
+              <button 
+                onClick={cancelarEdicion} 
+                style={{ background: "white", color: WC_COLORS.red, border: `1px solid ${WC_COLORS.red}`, padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", fontSize: "0.9em" }}
+              >
+                Cancelar Edición
+              </button>
+            )}
 
             <button 
-              onClick={ejecutarTrueque} 
+              onClick={guardarOActualizarPendiente} 
               style={{ background: WC_COLORS.darkBlue, color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", fontSize: "0.9em" }}
             >
-              Confirmar
+              {editandoId ? "Actualizar" : "Guardar Pendiente"}
             </button>
+
+            {!editandoId && (
+              <button 
+                onClick={ejecutarTruequeInmediato} 
+                style={{ background: WC_COLORS.green, color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", fontSize: "0.9em" }}
+                title="Descontar del inventario inmediatamente"
+              >
+                ¡Completar Ya!
+              </button>
+            )}
           </div>
 
         </div>
