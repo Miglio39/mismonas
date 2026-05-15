@@ -6,6 +6,7 @@ import html2canvas from 'html2canvas';
 
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
+// ORDEN PERSONALIZADO SINCRONIZADO CON EL ÁLBUM PRINCIPAL
 const seccionesAlbum = [
   { prefijo: "", nombre: "Especial Panini", bandera: "/logo_panini_especial.png", inicio: 0, fin: 0 },
   { prefijo: "FWC", nombre: "Especiales FIFA", bandera: "https://upload.wikimedia.org/wikipedia/commons/a/aa/FIFA_logo_without_slogan.svg", inicio: 1, fin: 20 },
@@ -73,8 +74,6 @@ function PvP({ usuario }) {
   const [matchUid, setMatchUid] = useState(() => new URLSearchParams(window.location.search).get('match'));
 
   const [pendientes, setPendientes] = useState([]);
-  
-  // NUEVO ESTADO: Para saber si estamos editando un trueque existente
   const [editandoId, setEditandoId] = useState(null);
 
   const reciboRef = useRef(null);
@@ -274,14 +273,12 @@ function PvP({ usuario }) {
     };
   };
 
-  // NUEVO: Función combinada para guardar uno nuevo o actualizar uno existente
   const guardarOActualizarPendiente = async () => {
     if (doy.length === 0 || recibo.length === 0) { alert("Selecciona al menos una mona para dar y una para recibir."); return; }
     
     setCargando(true);
     try {
       if (editandoId) {
-        // ACTUALIZAR EXISTENTE
         await updateDoc(doc(db, "trueques", editandoId), {
           doy: doy,
           recibo: recibo,
@@ -291,7 +288,6 @@ function PvP({ usuario }) {
         setPendientes(pendientes.map(p => p.id === editandoId ? { ...p, doy, recibo } : p));
         alert("✅ Propuesta de trueque actualizada.");
       } else {
-        // CREAR NUEVO
         const nuevoTrueque = {
           creador: usuario.uid,
           matchUid: matchUid || null,
@@ -311,7 +307,6 @@ function PvP({ usuario }) {
         alert("⏳ Trueque guardado en Pendientes.");
       }
 
-      // Limpiar mesa de trabajo
       setDoy([]);
       setRecibo([]);
       setBusqueda('');
@@ -389,7 +384,6 @@ function PvP({ usuario }) {
     setCargando(false);
   };
 
-  // NUEVO: Función para cargar los datos del trueque a editar a la mesa de trabajo
   const editarPendiente = (trueque) => {
     setDoy([...trueque.doy]);
     setRecibo([...trueque.recibo]);
@@ -397,7 +391,6 @@ function PvP({ usuario }) {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
 
-  // NUEVO: Función para cancelar la edición sin guardar
   const cancelarEdicion = () => {
     setDoy([]);
     setRecibo([]);
@@ -622,7 +615,7 @@ function PvP({ usuario }) {
         </div>
       </div>
 
-      {/* BARRA FLOTANTE DINÁMICA (CAMBIA SI ESTÁ EDITANDO) */}
+      {/* BARRA FLOTANTE DINÁMICA - AHORA LA IMAGEN SIEMPRE ESTÁ VISIBLE */}
       {(doy.length > 0 || recibo.length > 0) && (
         <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "white", padding: "15px 20px", borderRadius: "50px", boxShadow: "0 10px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "10px", zIndex: 1000, border: editandoId ? `3px solid ${WC_COLORS.lightBlue}` : `3px solid ${WC_COLORS.darkBlue}`, width: "95%", maxWidth: "700px", justifyContent: "space-between", flexWrap: "wrap" }}>
           
@@ -632,15 +625,15 @@ function PvP({ usuario }) {
           </div>
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {!editandoId && (
-              <button 
-                onClick={descargarResumen} 
-                disabled={generandoImagen}
-                style={{ background: "#25D366", color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "0.9em" }}
-              >
-                {generandoImagen ? "Cargando..." : "Imagen"}
-              </button>
-            )}
+            
+            {/* BOTÓN IMAGEN SIEMPRE VISIBLE */}
+            <button 
+              onClick={descargarResumen} 
+              disabled={generandoImagen}
+              style={{ background: "#25D366", color: "white", border: "none", padding: "10px 15px", borderRadius: "30px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "0.9em" }}
+            >
+              {generandoImagen ? "Cargando..." : "📸 Imagen"}
+            </button>
 
             {editandoId && (
               <button 
