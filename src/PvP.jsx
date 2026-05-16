@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
-// ORDEN PERSONALIZADO CON FWC CORREGIDO HASTA 19
+// ORDEN PERSONALIZADO SINCRONIZADO CON EL ÁLBUM PRINCIPAL
 const seccionesAlbum = [
   { prefijo: "", nombre: "Especial Panini", bandera: "/logo_panini_especial.png", inicio: 0, fin: 0 },
   { prefijo: "FWC", nombre: "Especiales FIFA", bandera: "https://upload.wikimedia.org/wikipedia/commons/a/aa/FIFA_logo_without_slogan.svg", inicio: 1, fin: 19 },
@@ -475,7 +475,7 @@ function PvP({ usuario }) {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px", margin: "auto", padding: "10px", paddingBottom: "100px" }}>
       
-      {/* TICKET OCULTO */}
+      {/* TICKET OCULTO PARA LA FOTO */}
       <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
         <div ref={reciboRef} style={{ width: "450px", background: `linear-gradient(135deg, ${WC_COLORS.darkBlue}, #001233)`, color: "white", padding: "30px", borderRadius: "20px", fontFamily: "'Inter', sans-serif" }}>
           
@@ -521,26 +521,28 @@ function PvP({ usuario }) {
         </button>
       </div>
 
-      <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lightBlue}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
-        <h4 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, fontSize: "0.95em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
-          ⏳ Trueques Pendientes <span style={{background: WC_COLORS.red, color: "white", padding: "2px 8px", borderRadius: "10px", fontSize: "0.8em"}}>{pendientes.length}</span>
-        </h4>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "250px", overflowY: "auto" }}>
-          {pendientes.map(p => (
-            <div key={p.id} style={{ background: editandoId === p.id ? "rgba(0, 163, 224, 0.1)" : "#f8fafc", padding: "12px", borderRadius: "10px", border: editandoId === p.id ? `2px solid ${WC_COLORS.lightBlue}` : "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-              <div style={{ flex: "1 1 200px" }}>
-                <div style={{ fontSize: "0.85em", color: WC_COLORS.darkBlue, marginBottom: "4px" }}><b>📤 Entregas:</b> {p.doy.join(", ")}</div>
-                <div style={{ fontSize: "0.85em", color: WC_COLORS.green }}><b>📥 Recibes:</b> {p.recibo.join(", ")}</div>
+      {pendientes.length > 0 && (
+        <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lightBlue}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+          <h4 style={{ margin: "0 0 15px 0", color: WC_COLORS.darkBlue, fontSize: "0.95em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
+            ⏳ Trueques Pendientes <span style={{background: WC_COLORS.red, color: "white", padding: "2px 8px", borderRadius: "10px", fontSize: "0.8em"}}>{pendientes.length}</span>
+          </h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "250px", overflowY: "auto" }}>
+            {pendientes.map(p => (
+              <div key={p.id} style={{ background: editandoId === p.id ? "rgba(0, 163, 224, 0.1)" : "#f8fafc", padding: "12px", borderRadius: "10px", border: editandoId === p.id ? `2px solid ${WC_COLORS.lightBlue}` : "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <div style={{ fontSize: "0.85em", color: WC_COLORS.darkBlue, marginBottom: "4px" }}><b>📤 Entregas:</b> {p.doy.join(", ")}</div>
+                  <div style={{ fontSize: "0.85em", color: WC_COLORS.green }}><b>📥 Recibes:</b> {p.recibo.join(", ")}</div>
+                </div>
+                <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                  <button onClick={() => cancelarPendiente(p.id)} style={{ background: "white", color: WC_COLORS.red, border: `1px solid ${WC_COLORS.red}`, padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em" }}>Cancelar</button>
+                  <button onClick={() => editarPendiente(p)} style={{ background: "white", color: WC_COLORS.lightBlue, border: `1px solid ${WC_COLORS.lightBlue}`, padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em" }}>✏️ Editar</button>
+                  <button onClick={() => confirmarTruequePendiente(p)} style={{ background: WC_COLORS.green, color: "white", border: "none", padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>✅ Completar</button>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-                <button onClick={() => cancelarPendiente(p.id)} style={{ background: "white", color: WC_COLORS.red, border: `1px solid ${WC_COLORS.red}`, padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em" }}>Cancelar</button>
-                <button onClick={() => editarPendiente(p)} style={{ background: "white", color: WC_COLORS.lightBlue, border: `1px solid ${WC_COLORS.lightBlue}`, padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em" }}>✏️ Editar</button>
-                <button onClick={() => confirmarTruequePendiente(p)} style={{ background: WC_COLORS.green, color: "white", border: "none", padding: "6px 10px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.8em", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>✅ Completar</button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {editandoId && (
         <div style={{ background: WC_COLORS.lightBlue, color: "white", padding: "15px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", fontWeight: "bold" }}>
@@ -549,18 +551,31 @@ function PvP({ usuario }) {
       )}
 
       <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginBottom: "25px", border: `2px solid ${WC_COLORS.lime}`, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
-        <h4 style={{ margin: "0 0 10px 0", color: WC_COLORS.darkBlue, fontSize: "0.9em", textTransform: "uppercase" }}>Analisis Rapido de Lista</h4>
+        <h4 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontSize: "0.95em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
+          ⚡ Análisis Rápido de Lista
+        </h4>
+        
+        {/* INSTRUCCIONES CLARAS PARA EL USUARIO */}
+        <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", marginBottom: "12px", borderLeft: `4px solid ${WC_COLORS.lightBlue}` }}>
+          <p style={{ margin: "0 0 5px 0", fontSize: "0.85em", color: "#334155" }}>
+            Pega directamente el mensaje que te envían por WhatsApp. Nuestro algoritmo leerá los códigos automáticamente.
+          </p>
+          <p style={{ margin: 0, fontSize: "0.8em", color: "#64748b", fontStyle: "italic" }}>
+            <b>Ejemplo válido:</b> "Hola, me faltan MEX3, ARG10. Tengo repetidas: BRA1, COL5."
+          </p>
+        </div>
+
         <textarea 
-          placeholder="Pega aqui la lista que te enviaron por WhatsApp..."
+          placeholder="Pega aquí la lista de WhatsApp..."
           value={listaPegada}
           onChange={(e) => setListaPegada(e.target.value)}
-          style={{ width: "100%", height: "80px", borderRadius: "10px", border: "1px solid #e2e8f0", padding: "10px", fontSize: "0.9em", resize: "none", marginBottom: "10px", fontFamily: "inherit" }}
+          style={{ width: "100%", height: "80px", borderRadius: "10px", border: "1px solid #cbd5e1", padding: "12px", fontSize: "0.95em", resize: "none", marginBottom: "12px", fontFamily: "inherit", boxSizing: "border-box" }}
         />
         <button 
           onClick={procesarListaPegada}
-          style={{ width: "100%", background: WC_COLORS.green, color: "white", border: "none", padding: "12px", borderRadius: "10px", fontWeight: "900", cursor: "pointer", textTransform: "uppercase" }}
+          style={{ width: "100%", background: WC_COLORS.green, color: "white", border: "none", padding: "12px", borderRadius: "10px", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "0.9em", boxShadow: "0 4px 10px rgba(0, 177, 64, 0.3)", transition: "0.2s" }}
         >
-          Generar Trueque Automatico
+          Generar Trueque Automático
         </button>
       </div>
 

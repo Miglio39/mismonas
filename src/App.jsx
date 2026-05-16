@@ -35,7 +35,7 @@ function App() {
   const [cargando, setCargando] = useState(true);
   const [promptInstalacion, setPromptInstalacion] = useState(null);
 
-  // NUEVO ESTADO: Controla si el menú del usuario está abierto
+  // Controla si el menú del usuario está abierto
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   const EMAILS_ADMIN = ["miglio3929@gmail.com"]; 
@@ -46,6 +46,9 @@ function App() {
       setUsuario(user);
       
       if (user) {
+        // Corrección: Forzar el cierre del menú al iniciar sesión
+        setMenuAbierto(false); 
+        
         try {
           const userDoc = await getDoc(doc(db, "usuarios", user.uid));
           if (userDoc.exists() && userDoc.data().nombre) {
@@ -118,8 +121,10 @@ function App() {
     boxShadow: pestaña === id ? `0 4px 10px ${WC_COLORS.green}40` : "none"
   });
 
-  // Determinar la inicial para el avatar
-  const inicialUsuario = nombreUsuario ? nombreUsuario.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase();
+  const cerrarSesion = () => {
+    setMenuAbierto(false);
+    signOut(auth);
+  };
 
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", color: "#1e293b" }}>
@@ -166,18 +171,23 @@ function App() {
               <button 
                 onClick={() => setMenuAbierto(!menuAbierto)}
                 style={{
-                  background: WC_COLORS.lightBlue, color: "white", width: "40px", height: "40px",
-                  borderRadius: "50%", border: "2px solid white", fontWeight: "900", fontSize: "1.1em",
+                  background: WC_COLORS.lightBlue, color: "white", width: "35px", height: "35px",
+                  borderRadius: "50%", border: "2px solid white", 
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.2)", transition: "transform 0.2s"
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.2)", transition: "transform 0.2s", padding: 0
                 }}
+                title="Perfil de Usuario"
               >
-                {inicialUsuario}
+                {/* Ícono de usuario en SVG */}
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
               </button>
 
               {menuAbierto && (
                 <div style={{
-                  position: "absolute", top: "50px", right: "0", background: "white", color: WC_COLORS.darkBlue,
+                  position: "absolute", top: "45px", right: "0", background: "white", color: WC_COLORS.darkBlue,
                   borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.3)", padding: "15px", minWidth: "160px",
                   display: "flex", flexDirection: "column", gap: "10px", animation: "aparecer 0.2s ease-out"
                 }}>
@@ -189,7 +199,7 @@ function App() {
                   </div>
                   
                   <button 
-                    onClick={() => signOut(auth)} 
+                    onClick={cerrarSesion} 
                     style={{
                       background: "#fef2f2", color: WC_COLORS.red, border: "none", padding: "10px",
                       borderRadius: "8px", fontWeight: "900", cursor: "pointer", display: "flex", 
