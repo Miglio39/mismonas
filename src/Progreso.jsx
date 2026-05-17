@@ -86,6 +86,7 @@ const CustomTooltip = ({ active, payload }) => {
           {data.bandera && <img src={data.bandera} alt="bandera" style={{ width: "24px", borderRadius: "2px" }} />}
           <b style={{ color: WC_COLORS.darkBlue, textTransform: "uppercase" }}>{data.nombre}</b>
         </div>
+       
         <p style={{ margin: 0, color: "#475569", fontSize: "0.9em", fontWeight: "bold" }}>
           Llevo: <b style={{ color: WC_COLORS.green }}>{data.obtenidas}</b> de {data.total}
         </p>
@@ -112,7 +113,6 @@ function Progreso() {
       const docSnap = await getDoc(docRef);
       const miData = docSnap.exists() ? docSnap.data() : {};
 
-      // Variables simplificadas para coincidir exactamente con "Mi Álbum"
       let faltan = 0;
       let llevo = 0;
       let repetidasTotales = 0;
@@ -124,6 +124,7 @@ function Progreso() {
         
         for (let i = seccion.inicio; i <= seccion.fin; i++) {
           totalAlbum++;
+          
           let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
           let cant = miData[codigo] || 0;
           
@@ -133,18 +134,25 @@ function Progreso() {
             llevo++;
             obtenidas++;
             if (cant > 1) {
-              repetidasTotales += (cant - 1); 
+              repetidasTotales += (cant - 1);
             }
           }
         }
         return { ...seccion, obtenidas, total, porcentaje: (obtenidas / total) * 100 };
       });
 
-      const datosBarras = progresoArray.filter(s => s.prefijo !== "");
+      let datosBarras = progresoArray.filter(s => s.prefijo !== "");
       
-      // Ya no desordenamos por progreso, mantenemos el orden exacto del álbum oficial en las barras
-      // datosBarras.sort((a, b) => b.obtenidas - a.obtenidas); 
-      
+      // 🚀 ORDENAMIENTO (MAYOR A MENOR) DE IZQUIERDA A DERECHA
+      datosBarras.sort((a, b) => {
+        // 1. Primero ordena por quien tiene más porcentaje
+        if (b.porcentaje !== a.porcentaje) {
+          return b.porcentaje - a.porcentaje; 
+        }
+        // 2. Si tienen el mismo porcentaje, pone primero al que tenga más monas obtenidas
+        return b.obtenidas - a.obtenidas;
+      });
+
       setDatosProgreso(datosBarras);
       setEstadisticasGlobales({ faltan, llevo, repetidasTotales, totalAlbum });
       setCargando(false);
@@ -191,31 +199,37 @@ function Progreso() {
               display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
             }}>
               <div style={{
-                width: "140px", height: "140px", background: "white", borderRadius: "50%",
+                width: "140px", 
+                height: "140px", background: "white", borderRadius: "50%",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 boxShadow: "inset 0 4px 10px rgba(0,0,0,0.1)"
               }}>
                 <span style={{ fontSize: "2em", fontWeight: "900", color: WC_COLORS.darkBlue }}>{porcentaje}%</span>
+             
                 <span style={{ fontSize: "0.7em", color: "#64748b", fontWeight: "bold" }}>COMPLETADO</span>
               </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "220px" }}>
               <div style={{ background: "#f8fafc", padding: "10px 15px", borderRadius: "10px", borderLeft: `5px solid ${WC_COLORS.green}` }}>
+              
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🟢 Llevo</span>
                   <span style={{ fontWeight: "900" }}>{estadisticasGlobales.llevo}</span>
                 </div>
               </div>
+             
               <div style={{ background: "#f8fafc", padding: "10px 15px", borderRadius: "10px", borderLeft: `5px solid ${WC_COLORS.red}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🔴 Faltan</span>
                   <span style={{ fontWeight: "900" }}>{estadisticasGlobales.faltan}</span>
+               
                 </div>
               </div>
               <div style={{ background: "#f0f9ff", padding: "10px 15px", borderRadius: "10px", borderLeft: `5px solid ${WC_COLORS.lightBlue}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🔵 Repetidas</span>
+         
                   <span style={{ fontWeight: "900", color: WC_COLORS.lightBlue }}>{estadisticasGlobales.repetidasTotales}</span>
                 </div>
               </div>
@@ -226,6 +240,7 @@ function Progreso() {
       )}
 
       {/* 2. MÓDULO INFERIOR: RANKING POR PAÍSES (BARRAS) */}
+     
       <div style={{ textAlign: "center", marginBottom: "20px" }}>
         <h2 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontWeight: "900", fontSize: "1.8em" }}>📈 Progreso de Llenado</h2>
         <p style={{ margin: 0, fontSize: "0.9em", color: "#64748b" }}>Desliza hacia la derecha para ver todos los países.</p>
@@ -233,6 +248,7 @@ function Progreso() {
       
       <div style={{ 
         background: "white", padding: "20px 0 20px 0", borderRadius: "15px", 
+        
         boxShadow: "0 4px 20px rgba(0,0,0,0.06)", overflowX: "auto", 
         scrollbarWidth: "thin", border: `1px solid ${WC_COLORS.lime}`
       }}>
@@ -240,14 +256,16 @@ function Progreso() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={datosProgreso} margin={{ top: 20, right: 30, left: 0, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+      
               <XAxis dataKey="prefijo" tick={<CustomXAxisTick />} axisLine={{ stroke: WC_COLORS.darkBlue }} tickLine={false} interval={0} />
               <YAxis domain={[0, 20]} tick={{ fill: WC_COLORS.darkBlue, fontWeight: "bold", fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(151, 215, 0, 0.1)' }} />
               <Bar dataKey="obtenidas" radius={[6, 6, 0, 0]} animationDuration={1500} label={{ position: 'top', fill: WC_COLORS.darkBlue, fontSize: 12, fontWeight: '900' }}>
+ 
                 {datosProgreso.map((entry, index) => {
-                  let color = WC_COLORS.red; 
+                  let color = WC_COLORS.red;
                   if (entry.porcentaje >= 30) color = WC_COLORS.lime; 
-                  if (entry.porcentaje >= 70) color = WC_COLORS.green; 
+                  if (entry.porcentaje >= 70) color = WC_COLORS.green;
                   if (entry.porcentaje === 100) color = WC_COLORS.lightBlue; 
                   return <Cell key={`cell-${index}`} fill={color} />;
                 })}
