@@ -45,7 +45,7 @@ const seccionesAlbum = [
   { prefijo: "FRA", nombre: "Francia", bandera: "https://flagcdn.com/w40/fr.png", inicio: 1, fin: 20 },
   { prefijo: "SEN", nombre: "Senegal", bandera: "https://flagcdn.com/w40/sn.png", inicio: 1, fin: 20 },
   { prefijo: "IRQ", nombre: "Irak", bandera: "https://flagcdn.com/w40/iq.png", inicio: 1, fin: 20 },
-  { prefijo: "NOR", Noruega: "Noruega", bandera: "https://flagcdn.com/w40/no.png", inicio: 1, fin: 20 },
+  { prefijo: "NOR", nombre: "Noruega", bandera: "https://flagcdn.com/w40/no.png", inicio: 1, fin: 20 },
   { prefijo: "ARG", nombre: "Argentina", bandera: "https://flagcdn.com/w40/ar.png", inicio: 1, fin: 20 },
   { prefijo: "ALG", nombre: "Argelia", bandera: "https://flagcdn.com/w40/dz.png", inicio: 1, fin: 20 },
   { prefijo: "AUT", nombre: "Austria", bandera: "https://flagcdn.com/w40/at.png", inicio: 1, fin: 20 },
@@ -177,7 +177,7 @@ function Compartir({ usuario }) {
     setGenerando(false);
   };
 
-  // RENDERIZAMOS CON TAMAÑOS FIJOS (ESTILO ESCRITORIO)
+  // Función para las filas de la tabla Oculta
   const RenderizarFilas = ({ datos, colorFondo }) => {
     if (Object.keys(datos).length === 0) return <p style={{ textAlign: "center", fontWeight: "bold", color: "#64748b", padding: "10px", fontSize: "1.2em" }}>¡Lista vacía!</p>;
     
@@ -187,12 +187,10 @@ function Compartir({ usuario }) {
       
       return (
         <div key={prefijo} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "15px", padding: "12px 20px", marginBottom: "10px", borderBottom: "2px solid #e2e8f0", background: "white", borderRadius: "10px" }}>
-          
           <div style={{ display: "flex", alignItems: "center", gap: "15px", flexShrink: 0 }}>
             <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "45px", height: "auto", border: "1px solid #cbd5e1", borderRadius: "4px", objectFit: "cover" }} />
             <span style={{ fontWeight: "900", color: WC_COLORS.darkBlue, minWidth: "70px", textTransform: "uppercase", fontSize: "1.3em" }}>{prefijo}</span>
           </div>
-
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", flex: 1 }}>
             {numeros.map(num => (
               <span key={num} style={{ background: colorFondo, color: "#0f172a", padding: "6px 12px", borderRadius: "6px", fontSize: "1.25em", fontWeight: "900", border: "1px solid #94a3b8" }}>
@@ -208,32 +206,42 @@ function Compartir({ usuario }) {
   if (cargando) return <div style={{ textAlign: "center", padding: "40px", fontSize: "1.2em", fontWeight: "bold", color: WC_COLORS.darkBlue }}>Cargando tus listas...</div>;
 
   return (
-    <div style={{ width: "100%", maxWidth: "900px", margin: "auto", fontFamily: "'Inter', system-ui, sans-serif", padding: "0 10px", boxSizing: "border-box" }}>
+    <div style={{ width: "100%", maxWidth: "600px", margin: "auto", fontFamily: "'Inter', system-ui, sans-serif", padding: "20px", boxSizing: "border-box" }}>
       
-      {/* BOTONES DE ACCIÓN (RESPONSIVES) */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center", marginBottom: "25px" }}>
-        <button 
-          onClick={compartirDirectoPDF} 
-          disabled={generando}
-          style={{ background: "#25D366", color: "white", padding: "15px 30px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1.1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(37, 211, 102, 0.4)", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center" }}
-        >
-          {generando ? "Creando Documento..." : "📲 Compartir PDF a WhatsApp"}
-        </button>
+      {/* VISTA LIMPIA PARA EL USUARIO (SOLO BOTONES) */}
+      <div style={{ background: "white", padding: "40px 20px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", textAlign: "center", borderTop: `6px solid ${WC_COLORS.lightBlue}` }}>
+        <div style={{ fontSize: "4em", marginBottom: "10px" }}>📦</div>
+        <h2 style={{ color: WC_COLORS.darkBlue, margin: "0 0 10px 0", fontSize: "1.8em", fontWeight: "900" }}>Tus listas están listas</h2>
+        <p style={{ color: "#64748b", fontSize: "1em", marginBottom: "30px", padding: "0 20px" }}>
+          Hemos preparado un documento detallado con tus faltantes y repetidas. Elige cómo deseas exportarlo:
+        </p>
 
-        <button 
-          onClick={descargarImagen} 
-          disabled={generando}
-          style={{ background: WC_COLORS.darkBlue, color: "white", padding: "12px 25px", borderRadius: "30px", border: "none", fontWeight: "bold", fontSize: "0.9em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center" }}
-        >
-          ⬇️ Descargar Imagen a mi Galería
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
+          <button 
+            onClick={compartirDirectoPDF} 
+            disabled={generando}
+            style={{ background: "#25D366", color: "white", padding: "16px 30px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1.1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(37, 211, 102, 0.4)", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center", transition: "transform 0.2s" }}
+          >
+            {generando ? "Procesando..." : "📲 Enviar por WhatsApp (PDF)"}
+          </button>
+
+          <button 
+            onClick={descargarImagen} 
+            disabled={generando}
+            style={{ background: WC_COLORS.darkBlue, color: "white", padding: "14px 25px", borderRadius: "30px", border: "none", fontWeight: "bold", fontSize: "1em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center", transition: "transform 0.2s" }}
+          >
+            ⬇️ Guardar como Imagen (PNG)
+          </button>
+        </div>
       </div>
 
-      {/* CONTENEDOR CON SCROLL HORIZONTAL: Mantiene la tarjeta a 900px fijos */}
-      <div style={{ width: "100%", overflowX: "auto", paddingBottom: "20px", borderRadius: "20px" }}>
+      {/* ========================================================= */}
+      {/* CONTENEDOR OCULTO (EL CEREBRO DONDE SE DIBUJA LA LISTA) */}
+      {/* ========================================================= */}
+      <div style={{ position: "fixed", top: "-20000px", left: "-20000px", zIndex: -9999 }}>
         <div 
           ref={ticketRef} 
-          style={{ width: "900px", minWidth: "900px", background: "white", padding: "40px 50px", boxSizing: "border-box", border: `4px solid #cbd5e1`, borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}
+          style={{ width: "900px", minWidth: "900px", background: "white", padding: "40px 50px", boxSizing: "border-box", border: `4px solid #cbd5e1`, borderRadius: "20px" }}
         >
           {/* HEADER DEL DOCUMENTO */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `5px solid ${WC_COLORS.lime}`, paddingBottom: "25px", marginBottom: "35px" }}>
@@ -250,15 +258,13 @@ function Compartir({ usuario }) {
             </div>
           </div>
 
-          {/* TABLA DE FILAS ORDENADAS POR PAÍS */}
+          {/* TABLAS */}
           <div style={{ marginBottom: "30px" }}>
-              {/* ME FALTAN */}
               <div style={{ background: "#fff1f2", padding: "15px 25px", borderRadius: "12px", marginBottom: "20px" }}>
                   <h3 style={{ margin: "0", color: WC_COLORS.red, fontSize: "1.6em", fontWeight: "900" }}>❌ ME FALTAN</h3>
               </div>
               <RenderizarFilas datos={listas.faltan} colorFondo="#e2e8f0" />
               
-              {/* TENGO REPETIDAS */}
               <div style={{ background: "#f0fdf4", padding: "15px 25px", borderRadius: "12px", marginBottom: "20px", marginTop: "40px" }}>
                   <h3 style={{ margin: "0", color: WC_COLORS.green, fontSize: "1.6em", fontWeight: "900" }}>✅ TENGO REPETIDAS</h3>
               </div>
@@ -269,12 +275,13 @@ function Compartir({ usuario }) {
           <div style={{ textAlign: "center", marginTop: "40px", paddingTop: "25px", borderTop: "4px dashed #cbd5e1" }}>
              <h4 style={{ margin: "0 0 12px 0", color: WC_COLORS.darkBlue, fontSize: "1.8em", fontWeight: "900", textTransform: "uppercase" }}>🚀 ¡Pásate a MisMonas.online!</h4>
              <p style={{ margin: "0 0 12px 0", color: "#334155", fontSize: "1.3em", fontWeight: "bold" }}>Migra tu lista de Faltantes y Repetidas con 1 clic. Averigua cuáles son las monas más buscadas del mercado y haz trueques con código QR.</p>
-             <div style={{ display: "inline-block", background: WC_COLORS.green, color: "white", padding: "8px 25px", borderRadius: "30px", fontWeight: "900", fontSize: "1.4em", marginTop: "10px", boxShadow: "0 4px 10px rgba(0, 177, 64, 0.4)" }}>
+             <div style={{ display: "inline-block", background: WC_COLORS.green, color: "white", padding: "8px 25px", borderRadius: "30px", fontWeight: "900", fontSize: "1.4em", marginTop: "10px" }}>
                ¡TOTALMENTE GRATIS!
              </div>
           </div>
         </div>
       </div>
+
     </div>
   );
 }
