@@ -12,6 +12,7 @@ import Progreso from './Progreso';
 import MapaCiudades from './MapaCiudades';
 import Admin from './Admin';
 import PvP from './PvP';
+import Migracion from './Migracion';
 
 const WC_COLORS = {
   green: "#00B140",
@@ -225,10 +226,11 @@ function App() {
         <div style={{ background: "white", marginTop: "-20px", padding: "25px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", marginBottom: "40px", position: "relative", zIndex: 1 }}>
           
           <nav style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-            <button onClick={() => setPestaña('album')} style={estiloBoton('album')}>📖 Mi Álbum</button>
-            <button onClick={() => setPestaña('progreso')} style={estiloBoton('progreso')}>📈 Progreso</button>
-            <button onClick={() => setPestaña('estadisticas')} style={estiloBoton('estadisticas')}>🌍 Mercado</button>
-            <button onClick={() => setPestaña('pvp')} style={estiloBoton('pvp')}>🤝 Intercambiar</button>
+            <button onClick={() => setPestaña('album')} style={estiloBoton('album')}>Mi Álbum</button>
+            <button onClick={() => setPestaña('progreso')} style={estiloBoton('progreso')}>Progreso</button>
+            <button onClick={() => setPestaña('estadisticas')} style={estiloBoton('estadisticas')}>Mercado</button>
+            <button onClick={() => setPestaña('pvp')} style={estiloBoton('pvp')}>Intercambiar</button>
+            <button onClick={() => setPestaña('migracion')} style={{...estiloBoton('migracion'), background: pestaña === 'migracion' ? WC_COLORS.darkBlue : "#f1f5f9", color: pestaña === 'migracion' ? "white" : WC_COLORS.darkBlue}}> Migrar</button>
 
             {esAdmin && (
               <>
@@ -239,13 +241,14 @@ function App() {
           </nav>
 
           <main style={{ minHeight: "400px" }}>
-            {pestaña === 'album' && <Album usuario={usuario} />}
-            {pestaña === 'progreso' && <Progreso />}
-            {pestaña === 'estadisticas' && <Estadisticas />}
-            {pestaña === 'pvp' && <PvP usuario={usuario} />}
-            {pestaña === 'mapa' && esAdmin && <MapaCiudades publicaciones={publicaciones} />}
-            {pestaña === 'admin' && esAdmin && <Admin />}
-          </main>
+          {pestaña === 'album' && <Album usuario={usuario} />}
+          {pestaña === 'progreso' && <Progreso />}
+          {pestaña === 'estadisticas' && <Estadisticas />}
+          {pestaña === 'pvp' && <PvP usuario={usuario} />}
+          {pestaña === 'migracion' && <Migracion usuario={usuario} />} {/* <-- Agrega esta línea */}
+          {pestaña === 'mapa' && esAdmin && <MapaCiudades publicaciones={publicaciones} />}
+          {pestaña === 'admin' && esAdmin && <Admin />}
+        </main>
         </div>
 
         <footer style={{ textAlign: "center", paddingBottom: "30px" }}>
