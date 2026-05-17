@@ -5,7 +5,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf'; 
 
-// COLORES OFICIALES Y ESTILOS DE TU APP
 const WC_COLORS = { green: "#00B140", darkBlue: "#00205B", lightBlue: "#00A3E0", red: "#E4002B", lime: "#97D700" };
 
 const seccionesAlbum = [
@@ -98,12 +97,10 @@ function Compartir({ usuario }) {
     cargarInventario();
   }, [usuario]);
 
-  // DESCARGAR COMO IMAGEN (PNG) PARA LA GALERÍA
   const descargarImagen = async () => {
     if (!ticketRef.current) return;
     setGenerando(true);
     try {
-      // Escala 2 para que se vea muy nítida en la galería
       const canvas = await html2canvas(ticketRef.current, { scale: 2, backgroundColor: "#f8fafc", useCORS: true });
       const image = canvas.toDataURL("image/png");
       const link = document.createElement("a");
@@ -117,10 +114,8 @@ function Compartir({ usuario }) {
     setGenerando(false);
   };
 
-  // GENERAR Y COMPARTIR PDF DIRECTAMENTE A WHATSAPP
   const generarPDF = async () => {
     if (!ticketRef.current) return null;
-    // Escala 1.5 y JPEG para mantener el PDF ligero y evitar errores de WhatsApp
     const canvas = await html2canvas(ticketRef.current, { scale: 1.5, backgroundColor: "#f8fafc", useCORS: true });
     const imgData = canvas.toDataURL("image/jpeg", 0.75);
     
@@ -135,6 +130,20 @@ function Compartir({ usuario }) {
     
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
     return pdf;
+  };
+
+  const descargarPDF = async () => {
+    setGenerando(true);
+    try {
+      const pdf = await generarPDF();
+      if(pdf) {
+        pdf.save(`Lista_MisMonas_${usuario.email.split('@')[0]}.pdf`);
+      }
+    } catch (error) {
+      console.error("Error al generar PDF", error);
+      alert("Hubo un error al crear el PDF.");
+    }
+    setGenerando(false);
   };
 
   const compartirDirectoPDF = async () => {
@@ -168,19 +177,23 @@ function Compartir({ usuario }) {
   };
 
   const RenderizarFilas = ({ datos, colorFondo }) => {
-    if (Object.keys(datos).length === 0) return <p style={{ textAlign: "center", fontWeight: "bold", color: "#64748b", padding: "10px", fontSize: "1.2em" }}>¡Lista vacía!</p>;
+    if (Object.keys(datos).length === 0) return <p style={{ textAlign: "center", fontWeight: "bold", color: "#64748b", padding: "10px", fontSize: "clamp(1em, 3vw, 1.2em)" }}>¡Lista vacía!</p>;
     
     return Object.entries(datos).map(([prefijo, numeros]) => {
       const seccion = seccionesAlbum.find(s => s.prefijo === prefijo);
       if (!seccion) return null;
       
       return (
-        <div key={prefijo} style={{ display: "flex", alignItems: "center", gap: "15px", padding: "12px 15px", marginBottom: "10px", borderBottom: "2px solid #e2e8f0", background: "white", borderRadius: "10px" }}>
-          <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "45px", height: "auto", border: "1px solid #cbd5e1", borderRadius: "4px", objectFit: "cover" }} />
-          <span style={{ fontWeight: "900", color: WC_COLORS.darkBlue, minWidth: "70px", textTransform: "uppercase", fontSize: "1.3em" }}>{prefijo}</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <div key={prefijo} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "clamp(8px, 2vw, 15px)", marginBottom: "10px", borderBottom: "2px solid #e2e8f0", background: "white", borderRadius: "10px" }}>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "clamp(30px, 8vw, 45px)", height: "auto", border: "1px solid #cbd5e1", borderRadius: "4px", objectFit: "cover" }} />
+            <span style={{ fontWeight: "900", color: WC_COLORS.darkBlue, minWidth: "50px", textTransform: "uppercase", fontSize: "clamp(1em, 4vw, 1.3em)" }}>{prefijo}</span>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", flex: 1 }}>
             {numeros.map(num => (
-              <span key={num} style={{ background: colorFondo, color: "#0f172a", padding: "6px 12px", borderRadius: "6px", fontSize: "1.25em", fontWeight: "900", border: "1px solid #94a3b8" }}>
+              <span key={num} style={{ background: colorFondo, color: "#0f172a", padding: "clamp(4px, 1.5vw, 6px) clamp(8px, 2vw, 12px)", borderRadius: "6px", fontSize: "clamp(0.9em, 3vw, 1.25em)", fontWeight: "900", border: "1px solid #94a3b8" }}>
                 {num}
               </span>
             ))}
@@ -193,14 +206,14 @@ function Compartir({ usuario }) {
   if (cargando) return <div style={{ textAlign: "center", padding: "40px", fontSize: "1.2em", fontWeight: "bold", color: WC_COLORS.darkBlue }}>Cargando tus listas...</div>;
 
   return (
-    <div style={{ maxWidth: "800px", margin: "auto", fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ width: "100%", maxWidth: "900px", margin: "auto", fontFamily: "'Inter', system-ui, sans-serif", padding: "0 10px", boxSizing: "border-box" }}>
       
       {/* BOTONES DE ACCIÓN */}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center", marginBottom: "25px" }}>
         <button 
           onClick={compartirDirectoPDF} 
           disabled={generando}
-          style={{ background: "#25D366", color: "white", padding: "15px 30px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1.1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(37, 211, 102, 0.4)", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center" }}
+          style={{ background: "#25D366", color: "white", padding: "15px 30px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "clamp(0.9em, 3vw, 1.1em)", cursor: "pointer", boxShadow: "0 4px 15px rgba(37, 211, 102, 0.4)", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center" }}
         >
           {generando ? "Creando Documento..." : "📲 Compartir PDF a WhatsApp"}
         </button>
@@ -208,52 +221,53 @@ function Compartir({ usuario }) {
         <button 
           onClick={descargarImagen} 
           disabled={generando}
-          style={{ background: WC_COLORS.darkBlue, color: "white", padding: "12px 25px", borderRadius: "30px", border: "none", fontWeight: "bold", fontSize: "0.9em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center" }}
+          style={{ background: WC_COLORS.darkBlue, color: "white", padding: "12px 25px", borderRadius: "30px", border: "none", fontWeight: "bold", fontSize: "clamp(0.8em, 2.5vw, 0.9em)", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "350px", justifyContent: "center" }}
         >
           ⬇️ Descargar Imagen a mi Galería
         </button>
       </div>
 
-      <div style={{ overflowX: "auto", paddingBottom: "20px" }}>
+      {/* CONTENEDOR 100% RESPONSIVE */}
+      <div style={{ paddingBottom: "20px" }}>
         <div 
           ref={ticketRef} 
-          style={{ width: "900px", background: "white", padding: "40px 50px 40px 50px", borderRadius: "20px", boxSizing: "border-box", border: `4px solid #cbd5e1`, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}
+          style={{ width: "100%", background: "white", padding: "clamp(20px, 4vw, 50px)", borderRadius: "20px", boxSizing: "border-box", border: `4px solid #cbd5e1`, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}
         >
           {/* HEADER DEL DOCUMENTO */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `5px solid ${WC_COLORS.lime}`, paddingBottom: "25px", marginBottom: "35px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                <div style={{ background: WC_COLORS.darkBlue, color: "white", width: "60px", height: "60px", borderRadius: "15px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.2em" }}>⚽</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px", borderBottom: `5px solid ${WC_COLORS.lime}`, paddingBottom: "20px", marginBottom: "25px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                <div style={{ background: WC_COLORS.darkBlue, color: "white", width: "clamp(40px, 10vw, 60px)", height: "clamp(40px, 10vw, 60px)", borderRadius: "15px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "clamp(1.5em, 5vw, 2.2em)" }}>⚽</div>
                 <div>
-                  <h2 style={{ margin: "0", fontSize: "3.2em", fontWeight: "900", letterSpacing: "-1px", color: WC_COLORS.darkBlue }}>Mis<span style={{ color: WC_COLORS.lime }}>Monas</span></h2>
-                  <p style={{ margin: "0", color: "#475569", fontWeight: "900", fontSize: "1.3em" }}>Colección Oficial 2026</p>
+                  <h2 style={{ margin: "0", fontSize: "clamp(2em, 6vw, 3.2em)", fontWeight: "900", letterSpacing: "-1px", color: WC_COLORS.darkBlue }}>Mis<span style={{ color: WC_COLORS.lime }}>Monas</span></h2>
+                  <p style={{ margin: "0", color: "#475569", fontWeight: "900", fontSize: "clamp(0.9em, 3vw, 1.3em)" }}>Colección Oficial 2026</p>
                 </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <p style={{ margin: "0", fontSize: "1.2em", color: "#64748b", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "900" }}>Lista de Intercambio</p>
-              <h3 style={{ margin: "5px 0 0 0", color: WC_COLORS.darkBlue, fontSize: "1.8em", fontWeight: "900", wordBreak: "break-all" }}>{usuario.email.split('@')[0]}</h3>
+              <p style={{ margin: "0", fontSize: "clamp(0.8em, 2.5vw, 1.2em)", color: "#64748b", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "900" }}>Lista de Intercambio</p>
+              <h3 style={{ margin: "5px 0 0 0", color: WC_COLORS.darkBlue, fontSize: "clamp(1.2em, 4vw, 1.8em)", fontWeight: "900", wordBreak: "break-all" }}>{usuario.email.split('@')[0]}</h3>
             </div>
           </div>
 
           {/* TABLA DE FILAS ORDENADAS POR PAÍS */}
           <div style={{ marginBottom: "30px" }}>
               {/* ME FALTAN */}
-              <div style={{ background: "#fff1f2", padding: "15px 25px", borderRadius: "12px", marginBottom: "20px" }}>
-                  <h3 style={{ margin: "0", color: WC_COLORS.red, fontSize: "1.6em", fontWeight: "900" }}>❌ ME FALTAN</h3>
+              <div style={{ background: "#fff1f2", padding: "clamp(10px, 2vw, 15px) clamp(15px, 3vw, 25px)", borderRadius: "12px", marginBottom: "15px" }}>
+                  <h3 style={{ margin: "0", color: WC_COLORS.red, fontSize: "clamp(1.2em, 4vw, 1.6em)", fontWeight: "900" }}>❌ ME FALTAN</h3>
               </div>
               <RenderizarFilas datos={listas.faltan} colorFondo="#e2e8f0" />
               
               {/* TENGO REPETIDAS */}
-              <div style={{ background: "#f0fdf4", padding: "15px 25px", borderRadius: "12px", marginBottom: "20px", marginTop: "40px" }}>
-                  <h3 style={{ margin: "0", color: WC_COLORS.green, fontSize: "1.6em", fontWeight: "900" }}>✅ TENGO REPETIDAS</h3>
+              <div style={{ background: "#f0fdf4", padding: "clamp(10px, 2vw, 15px) clamp(15px, 3vw, 25px)", borderRadius: "12px", marginBottom: "15px", marginTop: "30px" }}>
+                  <h3 style={{ margin: "0", color: WC_COLORS.green, fontSize: "clamp(1.2em, 4vw, 1.6em)", fontWeight: "900" }}>✅ TENGO REPETIDAS</h3>
               </div>
               <RenderizarFilas datos={listas.repetidas} colorFondo="#e2e8f0" />
           </div>
 
           {/* FOOTER PUBLICITARIO */}
-          <div style={{ textAlign: "center", marginTop: "50px", paddingTop: "30px", borderTop: "4px dashed #cbd5e1" }}>
-             <h4 style={{ margin: "0 0 12px 0", color: WC_COLORS.darkBlue, fontSize: "1.8em", fontWeight: "900", textTransform: "uppercase" }}>🚀 ¡Pásate a MisMonas.online!</h4>
-             <p style={{ margin: "0 0 12px 0", color: "#334155", fontSize: "1.3em", fontWeight: "bold" }}>Migra tu lista de Faltantes y Repetidas con 1 clic. Averigua cuáles son las monas más buscadas del mercado y haz trueques con código QR.</p>
-             <div style={{ display: "inline-block", background: WC_COLORS.green, color: "white", padding: "8px 25px", borderRadius: "30px", fontWeight: "900", fontSize: "1.4em", marginTop: "10px", boxShadow: "0 4px 10px rgba(0, 177, 64, 0.4)" }}>
+          <div style={{ textAlign: "center", marginTop: "40px", paddingTop: "25px", borderTop: "4px dashed #cbd5e1" }}>
+             <h4 style={{ margin: "0 0 12px 0", color: WC_COLORS.darkBlue, fontSize: "clamp(1.3em, 4vw, 1.8em)", fontWeight: "900", textTransform: "uppercase" }}>🚀 ¡Pásate a MisMonas.online!</h4>
+             <p style={{ margin: "0 0 12px 0", color: "#334155", fontSize: "clamp(1em, 3vw, 1.3em)", fontWeight: "bold" }}>Migra tu lista de Faltantes y Repetidas con 1 clic. Averigua cuáles son las monas más buscadas del mercado y haz trueques con código QR.</p>
+             <div style={{ display: "inline-block", background: WC_COLORS.green, color: "white", padding: "8px 25px", borderRadius: "30px", fontWeight: "900", fontSize: "clamp(1em, 3vw, 1.4em)", marginTop: "10px", boxShadow: "0 4px 10px rgba(0, 177, 64, 0.4)" }}>
                ¡TOTALMENTE GRATIS!
              </div>
           </div>
