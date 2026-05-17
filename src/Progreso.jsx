@@ -61,50 +61,57 @@ const seccionesAlbum = [
   { prefijo: "CC", nombre: "Coca-Cola", bandera: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg", inicio: 1, fin: 14 }
 ];
 
-// DISEÑO DEL EJE X (Banderas y prefijos debajo de las barras)
+// DISEÑO DEL EJE X CON ESCALADO INTELIGENTE (Detecta si es móvil o PC)
 const CustomXAxisTick = (props) => {
-  const { x, y, payload } = props;
+  const { x, y, payload, isMobile } = props;
   const seccion = seccionesAlbum.find(s => s.prefijo === payload.value);
+
+  // Tamaños condicionales: Más pequeños en celular, más grandes en PC
+  const flagW = isMobile ? 22 : 28;
+  const flagH = isMobile ? 14 : 18;
+  const fontSize = isMobile ? 10 : 12;
+  const textY = isMobile ? 36 : 42;
 
   return (
     <g transform={`translate(${x},${y})`}>
       {seccion?.bandera && (
-        <image href={seccion.bandera} x={-14} y={8} width="28" height="18" preserveAspectRatio="xMidYMid slice" />
+        <image href={seccion.bandera} x={-(flagW / 2)} y={8} width={flagW} height={flagH} preserveAspectRatio="xMidYMid slice" />
       )}
-      <text x={0} y={42} textAnchor="middle" fill={WC_COLORS.darkBlue} fontSize={12} fontWeight="900">
+      <text x={0} y={textY} textAnchor="middle" fill={WC_COLORS.darkBlue} fontSize={fontSize} fontWeight="900">
         {payload.value}
       </text>
     </g>
   );
 };
 
-// DISEÑO RESPONSIVE Y CENTRADO DEL TOOLTIP
-const CustomTooltip = ({ active, payload }) => {
+// TOOLTIP COMPACTO PARA MÓVILES
+const CustomTooltip = (props) => {
+  const { active, payload, isMobile } = props;
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
       <div style={{ 
         background: "rgba(255, 255, 255, 0.95)", 
-        padding: "15px", 
+        padding: isMobile ? "10px" : "15px", 
         border: `2px solid ${WC_COLORS.lime}`, 
-        borderRadius: "14px", 
+        borderRadius: "12px", 
         boxShadow: "0 8px 25px rgba(0,0,0,0.15)", 
         textAlign: "center",
-        minWidth: "140px",
+        minWidth: isMobile ? "110px" : "140px",
         backdropFilter: "blur(5px)"
       }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "12px", borderBottom: "2px solid #e2e8f0", paddingBottom: "12px" }}>
-          {data.bandera && <img src={data.bandera} alt="bandera" style={{ width: "36px", height: "auto", borderRadius: "4px", border: "1px solid #cbd5e1" }} />}
-          <b style={{ color: WC_COLORS.darkBlue, textTransform: "uppercase", fontSize: "1.2em", lineHeight: "1" }}>{data.nombre}</b>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", marginBottom: "8px", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px" }}>
+          {data.bandera && <img src={data.bandera} alt="bandera" style={{ width: isMobile ? "28px" : "36px", height: "auto", borderRadius: "4px", border: "1px solid #cbd5e1" }} />}
+          <b style={{ color: WC_COLORS.darkBlue, textTransform: "uppercase", fontSize: isMobile ? "1em" : "1.2em", lineHeight: "1" }}>{data.nombre}</b>
         </div>
        
-        <p style={{ margin: "0 0 8px 0", color: "#334155", fontSize: "1.05em", fontWeight: "600" }}>
-          Llevo: <b style={{ color: WC_COLORS.green, fontSize: "1.3em" }}>{data.obtenidas}</b> <span style={{ color: "#94a3b8", fontSize: "0.85em" }}>/ {data.total}</span>
+        <p style={{ margin: "0 0 6px 0", color: "#334155", fontSize: isMobile ? "0.9em" : "1.05em", fontWeight: "600" }}>
+          Llevo: <b style={{ color: WC_COLORS.green, fontSize: "1.2em" }}>{data.obtenidas}</b> <span style={{ color: "#94a3b8", fontSize: "0.8em" }}>/ {data.total}</span>
         </p>
         
-        <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-          <span style={{ display: "block", fontSize: "0.75em", color: "#64748b", fontWeight: "900", letterSpacing: "1px", marginBottom: "2px" }}>COMPLETADO</span>
-          <b style={{ color: WC_COLORS.lightBlue, fontSize: "1.4em" }}>{Math.round(data.porcentaje)}%</b>
+        <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+          <span style={{ display: "block", fontSize: "0.7em", color: "#64748b", fontWeight: "900", letterSpacing: "1px", marginBottom: "2px" }}>COMPLETADO</span>
+          <b style={{ color: WC_COLORS.lightBlue, fontSize: isMobile ? "1.2em" : "1.4em" }}>{Math.round(data.porcentaje)}%</b>
         </div>
       </div>
     );
@@ -116,6 +123,15 @@ function Progreso() {
   const [datosProgreso, setDatosProgreso] = useState([]);
   const [estadisticasGlobales, setEstadisticasGlobales] = useState(null);
   const [cargando, setCargando] = useState(true);
+  
+  // 🔥 HOOK QUE DETECTA SI ESTÁS EN CELULAR O PC 🔥
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const calcularProgreso = async () => {
@@ -137,7 +153,6 @@ function Progreso() {
         
         for (let i = seccion.inicio; i <= seccion.fin; i++) {
           totalAlbum++;
-          
           let codigo = seccion.prefijo === "" && i === 0 ? "00" : `${seccion.prefijo}${i}`;
           let cant = miData[codigo] || 0;
           
@@ -156,7 +171,7 @@ function Progreso() {
 
       const datosBarras = progresoArray.filter(s => s.prefijo !== "");
       
-      // Ordenamiento de mayor a menor (de izquierda a derecha)
+      // Ordenamiento de mayor a menor
       datosBarras.sort((a, b) => {
         if (b.porcentaje !== a.porcentaje) {
           return b.porcentaje - a.porcentaje; 
@@ -178,8 +193,14 @@ function Progreso() {
     </div>
   );
 
-  // Aumentamos a 70 el espacio por columna para que las barras tengan aire entre sí
-  const anchoGrafico = Math.max(800, datosProgreso.length * 50);
+  // =========================================================================
+  // MATEMÁTICA ADAPTATIVA: Cambia las dimensiones según la pantalla
+  // =========================================================================
+  const espacioPorColumna = isMobile ? 42 : 70; // 42px en celular junta más las barras
+  const anchoGrafico = Math.max(isMobile ? window.innerWidth - 40 : 800, datosProgreso.length * espacioPorColumna);
+  const altoGrafico = isMobile ? 380 : 550; // Gráfica más bajita en el celular para que quepa en pantalla
+  const grosorBarra = isMobile ? 22 : 35; // Barras más flacas en el celular
+  const tamañoNumero = isMobile ? 11 : 14;
 
   let porcentaje = 0, conicGradient = "";
   if (estadisticasGlobales) {
@@ -195,33 +216,33 @@ function Progreso() {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", width: "100%", margin: "auto", padding: "10px", paddingBottom: "50px" }}>
       
-      {/* 1. MÓDULO SUPERIOR: PROGRESO GLOBAL (DONA) */}
+      {/* 1. MÓDULO SUPERIOR: PROGRESO GLOBAL */}
       {estadisticasGlobales && (
-        <div style={{ background: "white", padding: "30px 20px", borderRadius: "15px", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", border: `1px solid ${WC_COLORS.lime}`, marginBottom: "40px" }}>
+        <div style={{ background: "white", padding: "30px 20px", borderRadius: "15px", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", border: `1px solid ${WC_COLORS.lime}`, marginBottom: "30px" }}>
           
           <div style={{ textAlign: "center", marginBottom: "25px" }}>
             <h2 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontWeight: "900", fontSize: "1.8em" }}>🌟 Progreso Global</h2>
             <p style={{ margin: 0, fontSize: "0.9em", color: "#64748b" }}>Así va tu álbum en general.</p>
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "40px", justifyContent: "center", alignItems: "center" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "30px", justifyContent: "center", alignItems: "center" }}>
             
             <div style={{
-              width: "200px", height: "200px", borderRadius: "50%", background: conicGradient,
+              width: "180px", height: "180px", borderRadius: "50%", background: conicGradient,
               display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
             }}>
               <div style={{
-                width: "140px", 
-                height: "140px", background: "white", borderRadius: "50%",
+                width: "125px", 
+                height: "125px", background: "white", borderRadius: "50%",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 boxShadow: "inset 0 4px 10px rgba(0,0,0,0.1)"
               }}>
-                <span style={{ fontSize: "2em", fontWeight: "900", color: WC_COLORS.darkBlue }}>{porcentaje}%</span>
-                <span style={{ fontSize: "0.7em", color: "#64748b", fontWeight: "bold" }}>COMPLETADO</span>
+                <span style={{ fontSize: "1.8em", fontWeight: "900", color: WC_COLORS.darkBlue }}>{porcentaje}%</span>
+                <span style={{ fontSize: "0.65em", color: "#64748b", fontWeight: "bold" }}>COMPLETADO</span>
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "220px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "200px" }}>
               <div style={{ background: "#f8fafc", padding: "10px 15px", borderRadius: "10px", borderLeft: `5px solid ${WC_COLORS.green}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🟢 Llevo</span>
@@ -248,34 +269,32 @@ function Progreso() {
         </div>
       )}
 
-      {/* 2. MÓDULO INFERIOR: RANKING POR PAÍSES (BARRAS) */}
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+      {/* 2. MÓDULO INFERIOR: RANKING POR PAÍSES */}
+      <div style={{ textAlign: "center", marginBottom: "15px" }}>
         <h2 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontWeight: "900", fontSize: "1.8em" }}>📈 Progreso de Llenado</h2>
         <p style={{ margin: 0, fontSize: "0.9em", color: "#64748b" }}>Desliza hacia la derecha para ver todos los países.</p>
       </div>
       
       <div style={{ 
-        background: "white", padding: "20px 0 20px 0", borderRadius: "15px", 
+        background: "white", padding: "15px 0", borderRadius: "15px", 
         boxShadow: "0 4px 20px rgba(0,0,0,0.06)", overflowX: "auto", 
         scrollbarWidth: "thin", border: `1px solid ${WC_COLORS.lime}`
       }}>
-        {/* 🔥 AUMENTAMOS LA ALTURA DEL GRÁFICO A 550PX PARA HACER LAS BARRAS MÁS ALTAS */}
-        <div style={{ width: `${anchoGrafico}px`, height: "550px" }}>
+        <div style={{ width: `${anchoGrafico}px`, height: `${altoGrafico}px` }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={datosProgreso} margin={{ top: 25, right: 30, left: -20, bottom: 55 }}>
+            <BarChart data={datosProgreso} margin={{ top: 25, right: 20, left: -20, bottom: isMobile ? 45 : 55 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
       
-              <XAxis dataKey="prefijo" tick={<CustomXAxisTick />} axisLine={{ stroke: WC_COLORS.darkBlue }} tickLine={false} interval={0} />
+              <XAxis dataKey="prefijo" tick={<CustomXAxisTick isMobile={isMobile} />} axisLine={{ stroke: WC_COLORS.darkBlue }} tickLine={false} interval={0} />
               <YAxis domain={[0, 20]} tick={{ fill: WC_COLORS.darkBlue, fontWeight: "bold", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(151, 215, 0, 0.1)' }} />
+              <Tooltip content={<CustomTooltip isMobile={isMobile} />} cursor={{ fill: 'rgba(151, 215, 0, 0.1)' }} />
               
-              {/* 🔥 AGREGAMOS "barSize={35}" PARA QUE LAS BARRAS SEAN DELGADAS */}
               <Bar 
                 dataKey="obtenidas" 
-                barSize={35} 
+                barSize={grosorBarra} 
                 radius={[8, 8, 0, 0]} 
                 animationDuration={1500} 
-                label={{ position: 'top', fill: WC_COLORS.darkBlue, fontSize: 14, fontWeight: '900' }}
+                label={{ position: 'top', fill: WC_COLORS.darkBlue, fontSize: tamañoNumero, fontWeight: '900' }}
               >
                 {datosProgreso.map((entry, index) => {
                   let color = WC_COLORS.red;
