@@ -66,7 +66,7 @@ const CustomXAxisTick = (props) => {
   const { x, y, payload, isMobile } = props;
   const seccion = seccionesAlbum.find(s => s.prefijo === payload.value);
 
-  // Tamaños condicionales: Más pequeños en celular, más grandes en PC
+  // Tamaños condicionales: Más pequeños en celular, mais grandes en PC
   const flagW = isMobile ? 22 : 28;
   const flagH = isMobile ? 14 : 18;
   const fontSize = isMobile ? 10 : 12;
@@ -126,7 +126,7 @@ function Progreso() {
   
   // 🔥 HOOK QUE DETECTA SI ESTÁS EN CELULAR O PC 🔥
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
+  
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
@@ -196,10 +196,10 @@ function Progreso() {
   // =========================================================================
   // MATEMÁTICA ADAPTATIVA: Cambia las dimensiones según la pantalla
   // =========================================================================
-  const espacioPorColumna = isMobile ? 42 : 70; // 42px en celular junta más las barras
+  const espacioPorColumna = isMobile ? 32 : 50; // 42px en celular junta más las barras
   const anchoGrafico = Math.max(isMobile ? window.innerWidth - 40 : 800, datosProgreso.length * espacioPorColumna);
-  const altoGrafico = isMobile ? 380 : 550; // Gráfica más bajita en el celular para que quepa en pantalla
-  const grosorBarra = isMobile ? 22 : 35; // Barras más flacas en el celular
+  const altoGrafico = isMobile ? 400 : 450; // Gráfica mais bajita en el celular para que quepa en pantalla
+  const grosorBarra = isMobile ? 22 : 35; // Barras mais flacas en el celular
   const tamañoNumero = isMobile ? 11 : 14;
 
   let porcentaje = 0, conicGradient = "";
@@ -272,7 +272,7 @@ function Progreso() {
       {/* 2. MÓDULO INFERIOR: RANKING POR PAÍSES */}
       <div style={{ textAlign: "center", marginBottom: "15px" }}>
         <h2 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontWeight: "900", fontSize: "1.8em" }}>📈 Progreso de Llenado</h2>
-        <p style={{ margin: 0, fontSize: "0.9em", color: "#64748b" }}>Desliza hacia la derecha para ver todos los países.</p>
+        <p style={{ margin: 0, fontSize: "0.9em", color: "#64748b" }}>Desliza hacia la direita para ver todos los países.</p>
       </div>
       
       <div style={{ 
@@ -282,7 +282,12 @@ function Progreso() {
       }}>
         <div style={{ width: `${anchoGrafico}px`, height: `${altoGrafico}px` }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={datosProgreso} margin={{ top: 25, right: 20, left: -20, bottom: isMobile ? 45 : 55 }}>
+            {/* ADICIONADO style={{ outline: 'none' }} PARA REMOVER O CONTORNO */}
+            <BarChart 
+              data={datosProgreso} 
+              margin={{ top: 25, right: 20, left: -20, bottom: isMobile ? 45 : 55 }}
+              style={{ outline: 'none' }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
       
               <XAxis dataKey="prefijo" tick={<CustomXAxisTick isMobile={isMobile} />} axisLine={{ stroke: WC_COLORS.darkBlue }} tickLine={false} interval={0} />
@@ -301,7 +306,8 @@ function Progreso() {
                   if (entry.porcentaje >= 30) color = WC_COLORS.lime; 
                   if (entry.porcentaje >= 70) color = WC_COLORS.green;
                   if (entry.porcentaje === 100) color = WC_COLORS.lightBlue; 
-                  return <Cell key={`cell-${index}`} fill={color} />;
+                  // ADICIONADO style={{ outline: 'none' }} PARA REMOVER O CONTORNO
+                  return <Cell key={`cell-${index}`} fill={color} style={{ outline: 'none' }} />;
                 })}
               </Bar>
             </BarChart>
