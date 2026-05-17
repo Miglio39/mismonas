@@ -61,6 +61,7 @@ const seccionesAlbum = [
   { prefijo: "CC", nombre: "Coca-Cola", bandera: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg", inicio: 1, fin: 14 }
 ];
 
+// DISEÑO DEL EJE X (Banderas y prefijos debajo de las barras)
 const CustomXAxisTick = (props) => {
   const { x, y, payload } = props;
   const seccion = seccionesAlbum.find(s => s.prefijo === payload.value);
@@ -68,31 +69,43 @@ const CustomXAxisTick = (props) => {
   return (
     <g transform={`translate(${x},${y})`}>
       {seccion?.bandera && (
-        <image href={seccion.bandera} x={-12} y={5} width="24" height="16" />
+        <image href={seccion.bandera} x={-14} y={8} width="28" height="18" preserveAspectRatio="xMidYMid slice" />
       )}
-      <text x={0} y={35} textAnchor="middle" fill={WC_COLORS.darkBlue} fontSize={11} fontWeight="bold">
+      <text x={0} y={42} textAnchor="middle" fill={WC_COLORS.darkBlue} fontSize={12} fontWeight="900">
         {payload.value}
       </text>
     </g>
   );
 };
 
+// DISEÑO RESPONSIVE Y CENTRADO DEL TOOLTIP
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div style={{ background: "white", padding: "15px", border: `2px solid ${WC_COLORS.lime}`, borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>
-          {data.bandera && <img src={data.bandera} alt="bandera" style={{ width: "24px", borderRadius: "2px" }} />}
-          <b style={{ color: WC_COLORS.darkBlue, textTransform: "uppercase" }}>{data.nombre}</b>
+      <div style={{ 
+        background: "rgba(255, 255, 255, 0.95)", 
+        padding: "15px", 
+        border: `2px solid ${WC_COLORS.lime}`, 
+        borderRadius: "14px", 
+        boxShadow: "0 8px 25px rgba(0,0,0,0.15)", 
+        textAlign: "center",
+        minWidth: "140px",
+        backdropFilter: "blur(5px)"
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "12px", borderBottom: "2px solid #e2e8f0", paddingBottom: "12px" }}>
+          {data.bandera && <img src={data.bandera} alt="bandera" style={{ width: "36px", height: "auto", borderRadius: "4px", border: "1px solid #cbd5e1" }} />}
+          <b style={{ color: WC_COLORS.darkBlue, textTransform: "uppercase", fontSize: "1.2em", lineHeight: "1" }}>{data.nombre}</b>
         </div>
        
-        <p style={{ margin: 0, color: "#475569", fontSize: "0.9em", fontWeight: "bold" }}>
-          Llevo: <b style={{ color: WC_COLORS.green }}>{data.obtenidas}</b> de {data.total}
+        <p style={{ margin: "0 0 8px 0", color: "#334155", fontSize: "1.05em", fontWeight: "600" }}>
+          Llevo: <b style={{ color: WC_COLORS.green, fontSize: "1.3em" }}>{data.obtenidas}</b> <span style={{ color: "#94a3b8", fontSize: "0.85em" }}>/ {data.total}</span>
         </p>
-        <p style={{ margin: "5px 0 0 0", color: "#475569", fontSize: "0.9em" }}>
-          Completado: <b style={{ color: WC_COLORS.lightBlue }}>{Math.round(data.porcentaje)}%</b>
-        </p>
+        
+        <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+          <span style={{ display: "block", fontSize: "0.75em", color: "#64748b", fontWeight: "900", letterSpacing: "1px", marginBottom: "2px" }}>COMPLETADO</span>
+          <b style={{ color: WC_COLORS.lightBlue, fontSize: "1.4em" }}>{Math.round(data.porcentaje)}%</b>
+        </div>
       </div>
     );
   }
@@ -141,15 +154,13 @@ function Progreso() {
         return { ...seccion, obtenidas, total, porcentaje: (obtenidas / total) * 100 };
       });
 
-      let datosBarras = progresoArray.filter(s => s.prefijo !== "");
+      const datosBarras = progresoArray.filter(s => s.prefijo !== "");
       
-      // 🚀 ORDENAMIENTO (MAYOR A MENOR) DE IZQUIERDA A DERECHA
+      // Ordenamiento de mayor a menor (de izquierda a derecha)
       datosBarras.sort((a, b) => {
-        // 1. Primero ordena por quien tiene más porcentaje
         if (b.porcentaje !== a.porcentaje) {
           return b.porcentaje - a.porcentaje; 
         }
-        // 2. Si tienen el mismo porcentaje, pone primero al que tenga más monas obtenidas
         return b.obtenidas - a.obtenidas;
       });
 
@@ -167,6 +178,7 @@ function Progreso() {
     </div>
   );
 
+  // Aumentamos a 70 el espacio por columna para que las barras tengan aire entre sí
   const anchoGrafico = Math.max(800, datosProgreso.length * 50);
 
   let porcentaje = 0, conicGradient = "";
@@ -205,14 +217,12 @@ function Progreso() {
                 boxShadow: "inset 0 4px 10px rgba(0,0,0,0.1)"
               }}>
                 <span style={{ fontSize: "2em", fontWeight: "900", color: WC_COLORS.darkBlue }}>{porcentaje}%</span>
-             
                 <span style={{ fontSize: "0.7em", color: "#64748b", fontWeight: "bold" }}>COMPLETADO</span>
               </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "220px" }}>
               <div style={{ background: "#f8fafc", padding: "10px 15px", borderRadius: "10px", borderLeft: `5px solid ${WC_COLORS.green}` }}>
-              
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🟢 Llevo</span>
                   <span style={{ fontWeight: "900" }}>{estadisticasGlobales.llevo}</span>
@@ -223,13 +233,12 @@ function Progreso() {
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🔴 Faltan</span>
                   <span style={{ fontWeight: "900" }}>{estadisticasGlobales.faltan}</span>
-               
                 </div>
               </div>
+              
               <div style={{ background: "#f0f9ff", padding: "10px 15px", borderRadius: "10px", borderLeft: `5px solid ${WC_COLORS.lightBlue}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: "bold", color: WC_COLORS.darkBlue, fontSize: "0.9em" }}>🔵 Repetidas</span>
-         
                   <span style={{ fontWeight: "900", color: WC_COLORS.lightBlue }}>{estadisticasGlobales.repetidasTotales}</span>
                 </div>
               </div>
@@ -240,7 +249,6 @@ function Progreso() {
       )}
 
       {/* 2. MÓDULO INFERIOR: RANKING POR PAÍSES (BARRAS) */}
-     
       <div style={{ textAlign: "center", marginBottom: "20px" }}>
         <h2 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontWeight: "900", fontSize: "1.8em" }}>📈 Progreso de Llenado</h2>
         <p style={{ margin: 0, fontSize: "0.9em", color: "#64748b" }}>Desliza hacia la derecha para ver todos los países.</p>
@@ -248,20 +256,27 @@ function Progreso() {
       
       <div style={{ 
         background: "white", padding: "20px 0 20px 0", borderRadius: "15px", 
-        
         boxShadow: "0 4px 20px rgba(0,0,0,0.06)", overflowX: "auto", 
         scrollbarWidth: "thin", border: `1px solid ${WC_COLORS.lime}`
       }}>
-        <div style={{ width: `${anchoGrafico}px`, height: "400px" }}>
+        {/* 🔥 AUMENTAMOS LA ALTURA DEL GRÁFICO A 550PX PARA HACER LAS BARRAS MÁS ALTAS */}
+        <div style={{ width: `${anchoGrafico}px`, height: "550px" }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={datosProgreso} margin={{ top: 20, right: 30, left: 0, bottom: 40 }}>
+            <BarChart data={datosProgreso} margin={{ top: 25, right: 30, left: -20, bottom: 55 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
       
               <XAxis dataKey="prefijo" tick={<CustomXAxisTick />} axisLine={{ stroke: WC_COLORS.darkBlue }} tickLine={false} interval={0} />
               <YAxis domain={[0, 20]} tick={{ fill: WC_COLORS.darkBlue, fontWeight: "bold", fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(151, 215, 0, 0.1)' }} />
-              <Bar dataKey="obtenidas" radius={[6, 6, 0, 0]} animationDuration={1500} label={{ position: 'top', fill: WC_COLORS.darkBlue, fontSize: 12, fontWeight: '900' }}>
- 
+              
+              {/* 🔥 AGREGAMOS "barSize={35}" PARA QUE LAS BARRAS SEAN DELGADAS */}
+              <Bar 
+                dataKey="obtenidas" 
+                barSize={35} 
+                radius={[8, 8, 0, 0]} 
+                animationDuration={1500} 
+                label={{ position: 'top', fill: WC_COLORS.darkBlue, fontSize: 14, fontWeight: '900' }}
+              >
                 {datosProgreso.map((entry, index) => {
                   let color = WC_COLORS.red;
                   if (entry.porcentaje >= 30) color = WC_COLORS.lime; 
