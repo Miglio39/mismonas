@@ -177,23 +177,26 @@ function Compartir({ usuario }) {
     setGenerando(false);
   };
 
-  // Función para las filas de la tabla Oculta
+  // VERSIÓN ULTRA-COMPACTA: Espacios y tamaños reducidos al mínimo
   const RenderizarFilas = ({ datos, colorFondo }) => {
-    if (Object.keys(datos).length === 0) return <p style={{ textAlign: "center", fontWeight: "bold", color: "#64748b", padding: "10px", fontSize: "1.2em" }}>¡Lista vacía!</p>;
+    if (Object.keys(datos).length === 0) return <p style={{ textAlign: "center", fontWeight: "bold", color: "#64748b", padding: "2px", fontSize: "0.95em", margin: "5px 0" }}>¡Lista vacía!</p>;
     
     return Object.entries(datos).map(([prefijo, numeros]) => {
       const seccion = seccionesAlbum.find(s => s.prefijo === prefijo);
       if (!seccion) return null;
       
       return (
-        <div key={prefijo} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "15px", padding: "12px 20px", marginBottom: "10px", borderBottom: "2px solid #e2e8f0", background: "white", borderRadius: "10px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "15px", flexShrink: 0 }}>
-            <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "45px", height: "auto", border: "1px solid #cbd5e1", borderRadius: "4px", objectFit: "cover" }} />
-            <span style={{ fontWeight: "900", color: WC_COLORS.darkBlue, minWidth: "70px", textTransform: "uppercase", fontSize: "1.3em" }}>{prefijo}</span>
+        <div key={prefijo} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "3px 8px", marginBottom: "3px", borderBottom: "1px solid #e2e8f0", background: "white", borderRadius: "6px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            {/* Bandera más pequeña */}
+            <img src={seccion.bandera} alt={seccion.nombre} style={{ width: "22px", height: "auto", border: "1px solid #cbd5e1", borderRadius: "2px", objectFit: "cover" }} />
+            <span style={{ fontWeight: "900", color: WC_COLORS.darkBlue, minWidth: "40px", textTransform: "uppercase", fontSize: "0.95em" }}>{prefijo}</span>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", flex: 1 }}>
+          {/* Espacio entre números reducido */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", flex: 1 }}>
             {numeros.map(num => (
-              <span key={num} style={{ background: colorFondo, color: "#0f172a", padding: "6px 12px", borderRadius: "6px", fontSize: "1.25em", fontWeight: "900", border: "1px solid #94a3b8" }}>
+              /* Paddings del número al mínimo */
+              <span key={num} style={{ background: colorFondo, color: "#0f172a", padding: "1px 5px", borderRadius: "3px", fontSize: "0.95em", fontWeight: "900", border: "1px solid #94a3b8" }}>
                 {num}
               </span>
             ))}
@@ -213,7 +216,7 @@ function Compartir({ usuario }) {
         <div style={{ fontSize: "4em", marginBottom: "10px" }}>📦</div>
         <h2 style={{ color: WC_COLORS.darkBlue, margin: "0 0 10px 0", fontSize: "1.8em", fontWeight: "900" }}>Tus listas están listas</h2>
         <p style={{ color: "#64748b", fontSize: "1em", marginBottom: "30px", padding: "0 20px" }}>
-          Hemos preparado un documento detallado con tus faltantes y repetidas. Elige cómo deseas exportarlo:
+          Hemos preparado un documento panorámico ultra-compacto con tus faltantes y repetidas.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
@@ -236,46 +239,54 @@ function Compartir({ usuario }) {
       </div>
 
       {/* ========================================================= */}
-      {/* CONTENEDOR OCULTO (EL CEREBRO DONDE SE DIBUJA LA LISTA) */}
+      {/* CONTENEDOR OCULTO ULTRA-COMPACTO */}
       {/* ========================================================= */}
       <div style={{ position: "fixed", top: "-20000px", left: "-20000px", zIndex: -9999 }}>
         <div 
           ref={ticketRef} 
-          style={{ width: "900px", minWidth: "900px", background: "white", padding: "40px 50px", boxSizing: "border-box", border: `4px solid #cbd5e1`, borderRadius: "20px" }}
+          style={{ width: "1300px", minWidth: "1300px", background: "white", padding: "20px 30px", boxSizing: "border-box", border: `4px solid #cbd5e1`, borderRadius: "10px" }}
         >
-          {/* HEADER DEL DOCUMENTO */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `5px solid ${WC_COLORS.lime}`, paddingBottom: "25px", marginBottom: "35px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                <div style={{ background: WC_COLORS.darkBlue, color: "white", width: "60px", height: "60px", borderRadius: "15px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.2em" }}>⚽</div>
+          {/* HEADER EXTREMADAMENTE COMPACTO */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${WC_COLORS.lime}`, paddingBottom: "10px", marginBottom: "15px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                <div style={{ background: WC_COLORS.darkBlue, color: "white", width: "45px", height: "45px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8em" }}>⚽</div>
                 <div>
-                  <h2 style={{ margin: "0", fontSize: "3.2em", fontWeight: "900", letterSpacing: "-1px", color: WC_COLORS.darkBlue }}>Mis<span style={{ color: WC_COLORS.lime }}>Monas</span></h2>
-                  <p style={{ margin: "0", color: "#475569", fontWeight: "900", fontSize: "1.3em" }}>Colección Oficial 2026</p>
+                  <h2 style={{ margin: "0", fontSize: "2.2em", fontWeight: "900", letterSpacing: "-1px", color: WC_COLORS.darkBlue, lineHeight: "1" }}>Mis<span style={{ color: WC_COLORS.lime }}>Monas</span></h2>
+                  <p style={{ margin: "2px 0 0 0", color: "#475569", fontWeight: "900", fontSize: "1em", lineHeight: "1" }}>Colección Oficial 2026</p>
                 </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <p style={{ margin: "0", fontSize: "1.2em", color: "#64748b", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "900" }}>Lista de Intercambio</p>
-              <h3 style={{ margin: "5px 0 0 0", color: WC_COLORS.darkBlue, fontSize: "1.8em", fontWeight: "900", wordBreak: "break-all" }}>{usuario.email.split('@')[0]}</h3>
+              <p style={{ margin: "0 0 2px 0", fontSize: "0.9em", color: "#64748b", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "900", lineHeight: "1" }}>Lista de Intercambio</p>
+              <h3 style={{ margin: "0", color: WC_COLORS.darkBlue, fontSize: "1.4em", fontWeight: "900", wordBreak: "break-all", lineHeight: "1" }}>{usuario.email.split('@')[0]}</h3>
             </div>
           </div>
 
-          {/* TABLAS */}
-          <div style={{ marginBottom: "30px" }}>
-              <div style={{ background: "#fff1f2", padding: "15px 25px", borderRadius: "12px", marginBottom: "20px" }}>
-                  <h3 style={{ margin: "0", color: WC_COLORS.red, fontSize: "1.6em", fontWeight: "900" }}>❌ ME FALTAN</h3>
-              </div>
-              <RenderizarFilas datos={listas.faltan} colorFondo="#e2e8f0" />
+          {/* TABLAS DIVIDIDAS EN 2 COLUMNAS CON MÁRGENES MÍNIMOS */}
+          <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", marginBottom: "5px" }}>
               
-              <div style={{ background: "#f0fdf4", padding: "15px 25px", borderRadius: "12px", marginBottom: "20px", marginTop: "40px" }}>
-                  <h3 style={{ margin: "0", color: WC_COLORS.green, fontSize: "1.6em", fontWeight: "900" }}>✅ TENGO REPETIDAS</h3>
+              {/* COLUMNA IZQUIERDA: ME FALTAN */}
+              <div style={{ flex: 1 }}>
+                <div style={{ background: "#fff1f2", padding: "6px 15px", borderRadius: "8px", marginBottom: "8px", textAlign: "center" }}>
+                    <h3 style={{ margin: "0", color: WC_COLORS.red, fontSize: "1.2em", fontWeight: "900" }}>❌ ME FALTAN</h3>
+                </div>
+                <RenderizarFilas datos={listas.faltan} colorFondo="#e2e8f0" />
               </div>
-              <RenderizarFilas datos={listas.repetidas} colorFondo="#e2e8f0" />
+              
+              {/* COLUMNA DERECHA: TENGO REPETIDAS */}
+              <div style={{ flex: 1 }}>
+                <div style={{ background: "#f0fdf4", padding: "6px 15px", borderRadius: "8px", marginBottom: "8px", textAlign: "center" }}>
+                    <h3 style={{ margin: "0", color: WC_COLORS.green, fontSize: "1.2em", fontWeight: "900" }}>✅ TENGO REPETIDAS</h3>
+                </div>
+                <RenderizarFilas datos={listas.repetidas} colorFondo="#e2e8f0" />
+              </div>
+
           </div>
 
-          {/* FOOTER PUBLICITARIO */}
-          <div style={{ textAlign: "center", marginTop: "40px", paddingTop: "25px", borderTop: "4px dashed #cbd5e1" }}>
-             <h4 style={{ margin: "0 0 12px 0", color: WC_COLORS.darkBlue, fontSize: "1.8em", fontWeight: "900", textTransform: "uppercase" }}>🚀 ¡Pásate a MisMonas.online!</h4>
-             <p style={{ margin: "0 0 12px 0", color: "#334155", fontSize: "1.3em", fontWeight: "bold" }}>Migra tu lista de Faltantes y Repetidas con 1 clic. Averigua cuáles son las monas más buscadas del mercado y haz trueques con código QR.</p>
-             <div style={{ display: "inline-block", background: WC_COLORS.green, color: "white", padding: "8px 25px", borderRadius: "30px", fontWeight: "900", fontSize: "1.4em", marginTop: "10px" }}>
+          {/* FOOTER PUBLICITARIO COMPACTO */}
+          <div style={{ textAlign: "center", marginTop: "10px", paddingTop: "10px", borderTop: "2px dashed #cbd5e1" }}>
+             <h4 style={{ margin: "0 0 5px 0", color: WC_COLORS.darkBlue, fontSize: "1.3em", fontWeight: "900", textTransform: "uppercase" }}>🚀 ¡Pásate a MisMonas.online!</h4>
+             <p style={{ margin: "0 0 6px 0", color: "#334155", fontSize: "1em", fontWeight: "bold" }}>Migra tu lista de Faltantes y Repetidas con 1 clic. Averigua cuáles son las monas más buscadas del mercado y haz trueques con código QR.</p>
+             <div style={{ display: "inline-block", background: WC_COLORS.green, color: "white", padding: "4px 15px", borderRadius: "20px", fontWeight: "900", fontSize: "1em", marginTop: "2px" }}>
                ¡TOTALMENTE GRATIS!
              </div>
           </div>
