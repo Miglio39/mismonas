@@ -162,14 +162,19 @@ function TruequeInteligente({ usuario }) {
     const otroFaltan = extraerCodigos(txtFaltan);
     const otroRepetidas = extraerCodigos(txtRepetidas);
 
+    // 1. LO QUE YO LE DOY
     let darBase = otroFaltan
       .filter(cod => miInventario[cod] && miInventario[cod] > 1)
       .map(cod => ({ codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0 }));
+
+    // 🛑 FILTRO ANTI-ESPEJO: Extraigo todos los códigos que ya estoy ofreciendo en este trato
+    const codigosQueVoyADar = darBase.map(item => item.codigo);
 
     let pedirFinal = [];
     let darFinal = [];
     let msjAdmin = "";
 
+    // ✨ CASO A: EL USUARIO SOLO ENVIÓ FALTANTES (MODO A CIEGAS)
     if (otroRepetidas.length === 0) {
       if (darBase.length === 0) {
         msjAdmin = "No envió repetidas y no tienes nada de lo que le falta. Trato imposible.";
@@ -178,12 +183,14 @@ function TruequeInteligente({ usuario }) {
         darFinal = darBase;
         const tradeSize = darFinal.length;
 
-        let todoElMercado = Object.keys(mercadoGlobal).map(cod => ({
-          codigo: cod,
-          rareza: calcularRareza(cod),
-          balance: mercadoGlobal[cod] || 0,
-          esMiFaltante: !miInventario[cod] || miInventario[cod] === 0
-        })).sort((a, b) => a.balance - b.balance); 
+        let todoElMercado = Object.keys(mercadoGlobal)
+          .filter(cod => !codigosQueVoyADar.includes(cod)) // 🛑 BLOQUEO ANTI-ESPEJO APLICADO AQUÍ
+          .map(cod => ({
+            codigo: cod,
+            rareza: calcularRareza(cod),
+            balance: mercadoGlobal[cod] || 0,
+            esMiFaltante: !miInventario[cod] || miInventario[cod] === 0
+          })).sort((a, b) => a.balance - b.balance); 
 
         let topFaltantes = todoElMercado.filter(m => m.esMiFaltante);
         let topReventa = todoElMercado.filter(m => !m.esMiFaltante);
@@ -191,10 +198,14 @@ function TruequeInteligente({ usuario }) {
         pedirFinal = [...topFaltantes, ...topReventa].slice(0, tradeSize);
         msjAdmin = `🕵️ MODO A CIEGAS: Solo envió faltantes. Tú le darás ${tradeSize} monas, y el sistema te armó un cobro exigiendo ${tradeSize} monas sacadas exclusivamente del TOP MÁS BUSCADAS del mercado global.`;
       }
-    } else {
-      let pedirBase = otroRepetidas.map(cod => ({ 
-        codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0, esMiFaltante: !miInventario[cod] || miInventario[cod] === 0 
-      }));
+    } 
+    // ✨ CASO B: EL USUARIO SÍ ENVIÓ REPETIDAS (MODO LOBO EQUITATIVO NORMAL)
+    else {
+      let pedirBase = otroRepetidas
+        .filter(cod => !codigosQueVoyADar.includes(cod)) // 🛑 BLOQUEO ANTI-ESPEJO APLICADO AQUÍ
+        .map(cod => ({ 
+          codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0, esMiFaltante: !miInventario[cod] || miInventario[cod] === 0 
+        }));
 
       let tratosExitosos = 0;
       let joyasArrebatadas = 0;
@@ -227,12 +238,13 @@ function TruequeInteligente({ usuario }) {
       if (tratosExitosos === 0) {
         msjAdmin = "No hay trato posible. O no tienes nada, o las rarezas no cuadran.";
       } else if (joyasArrebatadas > 0) {
-        msjAdmin = `🦈 MODO LOBO EQUITATIVO: Trato ${tratosExitosos}x${tratosExitosos}. Todo se igualó categoría x categoría. Añadiste ${joyasArrebatadas} de sus monas MÁS BUSCADAS para reventa.`;
+        msjAdmin = `🦈 MODO LOBO EQUITATIVO: Trato ${tratosExitosos}x${tratosExitosos}. Se igualó por categorías (filtrando repeticiones fantasma). Añadiste ${joyasArrebatadas} monas MUY BUSCADAS para reventa.`;
       } else {
-        msjAdmin = `⚖️ TRATO PERFECTO: ${tratosExitosos}x${tratosExitosos} igualando categorías exactas y pidiendo solo faltantes.`;
+        msjAdmin = `⚖️ TRATO PERFECTO: ${tratosExitosos}x${tratosExitosos} igualando categorías y evitando monas duplicadas en el trato.`;
       }
     }
 
+    // Orden final para la pantalla
     pedirFinal.sort((a, b) => b.rareza.nivel - a.rareza.nivel || (a.esMiFaltante ? -1 : 1) || a.balance - b.balance);
     darFinal.sort((a, b) => b.rareza.nivel - a.rareza.nivel || b.balance - a.balance);
 
@@ -307,7 +319,6 @@ function TruequeInteligente({ usuario }) {
   return (
     <div style={{ width: "100%", maxWidth: "900px", margin: "auto", fontFamily: "'Inter', sans-serif", padding: "15px", boxSizing: "border-box" }}>
       
-      {/* ESTILOS RESPONSIVOS INYECTADOS */}
       <style>{`
         .btn-accion { width: auto; flex: 1 1 auto; }
         .caja-principal { padding: 30px; }
