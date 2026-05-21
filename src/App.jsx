@@ -234,7 +234,7 @@ function App() {
             <button onClick={() => setPestaña('pvp')} style={estiloBoton('pvp')}>Intercambiar</button>
             <button onClick={() => setPestaña('migracion')} style={{...estiloBoton('migracion'), background: pestaña === 'migracion' ? WC_COLORS.darkBlue : "#f1f5f9", color: pestaña === 'migracion' ? "white" : WC_COLORS.darkBlue}}> Migrar</button>
             <button onClick={() => setPestaña('compartir')} style={estiloBoton('compartir')}>Compartir</button>
-            <button onClick={() => setPestaña('radar')} style={{...estiloBoton('radar', true), background: pestaña === 'radar' ? WC_COLORS.darkBlue : "#f59e0b", color: pestaña === 'radar' ? "white" : "white", border: "none"}}>🧠 Radar Trueque</button>
+            <button onClick={() => setPestaña('radar')} style={{...estiloBoton('radar', true), background: pestaña === 'radar' ? WC_COLORS.darkBlue : "#f59e0b", color: pestaña === 'radar' ? "white" : "white", border: "none"}}>Radar Trueque</button>
 
             {esAdmin && (
   <>
