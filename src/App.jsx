@@ -14,6 +14,7 @@ import Admin from './Admin';
 import PvP from './PvP';
 import Migracion from './Migracion';
 import Compartir from './Compartir';
+import TruequeInteligente from './TruequeInteligente';
 
 const WC_COLORS = {
   green: "#00B140",
@@ -233,14 +234,15 @@ function App() {
             <button onClick={() => setPestaña('pvp')} style={estiloBoton('pvp')}>Intercambiar</button>
             <button onClick={() => setPestaña('migracion')} style={{...estiloBoton('migracion'), background: pestaña === 'migracion' ? WC_COLORS.darkBlue : "#f1f5f9", color: pestaña === 'migracion' ? "white" : WC_COLORS.darkBlue}}> Migrar</button>
             <button onClick={() => setPestaña('compartir')} style={estiloBoton('compartir')}>Compartir</button>
+            <button onClick={() => setPestaña('radar')} style={{...estiloBoton('radar', true), background: pestaña === 'radar' ? WC_COLORS.darkBlue : "#f59e0b", color: pestaña === 'radar' ? "white" : "white", border: "none"}}>🧠 Radar Trueque</button>
 
             {esAdmin && (
-              <>
-                <button onClick={() => setPestaña('mapa')} style={{...estiloBoton('mapa'), border: `1.5px solid ${WC_COLORS.darkBlue}`}}>📍 Mapa</button>
-                <button onClick={() => setPestaña('admin')} style={estiloBoton('admin', true)}>🛡️ Admin</button>
-                
-              </>
-            )}
+  <>
+    <button onClick={() => setPestaña('mapa')} style={{...estiloBoton('mapa'), border: `1.5px solid ${WC_COLORS.darkBlue}`}}>📍 Mapa</button>
+    <button onClick={() => setPestaña('admin')} style={estiloBoton('admin', true)}>🛡️ Admin</button>   
+    
+  </>
+)}
           </nav>
 
           <main style={{ minHeight: "400px" }}>
@@ -252,6 +254,7 @@ function App() {
           {pestaña === 'mapa' && esAdmin && <MapaCiudades publicaciones={publicaciones} />}
           {pestaña === 'admin' && esAdmin && <Admin />}
           {pestaña === 'compartir' && <Compartir usuario={usuario} />}
+          {pestaña === 'radar' && <TruequeInteligente usuario={usuario} />}
         </main>
         </div>
 
