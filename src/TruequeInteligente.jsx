@@ -1,7 +1,6 @@
 // src/TruequeInteligente.jsx
 import { useState, useEffect, useRef } from 'react';
 import { db } from './firebase';
-// ✨ NUEVO: Importamos setDoc para poder actualizar el inventario
 import { doc, getDoc, collection, getDocs, setDoc } from 'firebase/firestore';
 import html2canvas from 'html2canvas';
 
@@ -25,7 +24,7 @@ function TruequeInteligente({ usuario }) {
   const [analisis, setAnalisis] = useState(null);
   const [generando, setGenerando] = useState(false);
   const [cargando, setCargando] = useState(true);
-  const [actualizando, setActualizando] = useState(false); // ✨ NUEVO: Estado de carga del inventario
+  const [actualizando, setActualizando] = useState(false);
   
   const propuestaRef = useRef(null);
 
@@ -60,6 +59,44 @@ function TruequeInteligente({ usuario }) {
             if (inv[cod] === 0) balanceMercado[cod] -= 1; // Demanda
             else if (inv[cod] > 1) balanceMercado[cod] += (inv[cod] - 1); // Oferta
           });
+        });
+
+        // Asegurar que todos los códigos existen en el mercado global
+        const constSecciones = [
+          { prefijo: "", inicio: 0, fin: 0 },
+          { prefijo: "FWC", inicio: 1, fin: 19 },
+          { prefijo: "MEX", inicio: 1, fin: 20 }, { prefijo: "RSA", inicio: 1, fin: 20 },
+          { prefijo: "KOR", inicio: 1, fin: 20 }, { prefijo: "CZE", inicio: 1, fin: 20 },
+          { prefijo: "CAN", inicio: 1, fin: 20 }, { prefijo: "BIH", inicio: 1, fin: 20 },
+          { prefijo: "QAT", inicio: 1, fin: 20 }, { prefijo: "SUI", inicio: 1, fin: 20 },
+          { prefijo: "BRA", inicio: 1, fin: 20 }, { prefijo: "MAR", inicio: 1, fin: 20 },
+          { prefijo: "HAI", inicio: 1, fin: 20 }, { prefijo: "SCO", inicio: 1, fin: 20 },
+          { prefijo: "USA", inicio: 1, fin: 20 }, { prefijo: "PAR", inicio: 1, fin: 20 },
+          { prefijo: "AUS", inicio: 1, fin: 20 }, { prefijo: "TUR", inicio: 1, fin: 20 },
+          { prefijo: "GER", inicio: 1, fin: 20 }, { prefijo: "CUW", inicio: 1, fin: 20 },
+          { prefijo: "CIV", inicio: 1, fin: 20 }, { prefijo: "ECU", inicio: 1, fin: 20 },
+          { prefijo: "NED", inicio: 1, fin: 20 }, { prefijo: "JPN", inicio: 1, fin: 20 },
+          { prefijo: "SWE", inicio: 1, fin: 20 }, { prefijo: "TUN", inicio: 1, fin: 20 },
+          { prefijo: "BEL", inicio: 1, fin: 20 }, { prefijo: "EGY", inicio: 1, fin: 20 },
+          { prefijo: "IRN", inicio: 1, fin: 20 }, { prefijo: "NZL", inicio: 1, fin: 20 },
+          { prefijo: "ESP", inicio: 1, fin: 20 }, { prefijo: "CPV", inicio: 1, fin: 20 },
+          { prefijo: "KSA", inicio: 1, fin: 20 }, { prefijo: "URU", inicio: 1, fin: 20 },
+          { prefijo: "FRA", inicio: 1, fin: 20 }, { prefijo: "SEN", inicio: 1, fin: 20 },
+          { prefijo: "IRQ", inicio: 1, fin: 20 }, { prefijo: "NOR", inicio: 1, fin: 20 },
+          { prefijo: "ARG", inicio: 1, fin: 20 }, { prefijo: "ALG", inicio: 1, fin: 20 },
+          { prefijo: "AUT", inicio: 1, fin: 20 }, { prefijo: "JOR", inicio: 1, fin: 20 },
+          { prefijo: "POR", inicio: 1, fin: 20 }, { prefijo: "COD", inicio: 1, fin: 20 },
+          { prefijo: "UZB", inicio: 1, fin: 20 }, { prefijo: "COL", inicio: 1, fin: 20 },
+          { prefijo: "ENG", inicio: 1, fin: 20 }, { prefijo: "CRO", inicio: 1, fin: 20 },
+          { prefijo: "GHA", inicio: 1, fin: 20 }, { prefijo: "PAN", inicio: 1, fin: 20 },
+          { prefijo: "CC", inicio: 1, fin: 14 }
+        ];
+
+        constSecciones.forEach(sec => {
+          for(let i=sec.inicio; i<=sec.fin; i++){
+            let cod = sec.prefijo === "" && i === 0 ? "00" : `${sec.prefijo}${i}`;
+            if(balanceMercado[cod] === undefined) balanceMercado[cod] = 0;
+          }
         });
 
         setMercadoGlobal(balanceMercado);
@@ -116,65 +153,97 @@ function TruequeInteligente({ usuario }) {
       }
     } else if (idxFaltan !== -1) {
       txtFaltan = txt.substring(idxFaltan);
+      txtRepetidas = ""; // No envió repetidas
     } else if (idxRepetidas !== -1) {
       txtRepetidas = txt.substring(idxRepetidas);
+      txtFaltan = "";
     }
 
     const otroFaltan = extraerCodigos(txtFaltan);
     const otroRepetidas = extraerCodigos(txtRepetidas);
 
+    // 1. LO QUE YO LE DOY
     let darBase = otroFaltan
       .filter(cod => miInventario[cod] && miInventario[cod] > 1)
       .map(cod => ({ codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0 }));
 
-    let pedirBase = otroRepetidas
-      .map(cod => ({ 
-        codigo: cod, 
-        rareza: calcularRareza(cod), 
-        balance: mercadoGlobal[cod] || 0, 
-        esMiFaltante: !miInventario[cod] || miInventario[cod] === 0 
-      }));
-
     let pedirFinal = [];
     let darFinal = [];
-    let tratosExitosos = 0;
-    let joyasArrebatadas = 0;
-
-    const niveles = [5, 4, 3, 1]; 
-
-    niveles.forEach(nivel => {
-      let misDisponiblesLvl = darBase.filter(m => m.rareza.nivel === nivel);
-      let susDisponiblesLvl = pedirBase.filter(m => m.rareza.nivel === nivel);
-      
-      let matchCount = Math.min(misDisponiblesLvl.length, susDisponiblesLvl.length);
-      
-      if (matchCount > 0) {
-        tratosExitosos += matchCount;
-
-        misDisponiblesLvl.sort((a, b) => b.balance - a.balance);
-        darFinal.push(...misDisponiblesLvl.slice(0, matchCount));
-        
-        susDisponiblesLvl.sort((a, b) => {
-          if (a.esMiFaltante && !b.esMiFaltante) return -1;
-          if (!a.esMiFaltante && b.esMiFaltante) return 1;
-          return a.balance - b.balance; 
-        });
-
-        const seleccion = susDisponiblesLvl.slice(0, matchCount);
-        joyasArrebatadas += seleccion.filter(m => !m.esMiFaltante).length;
-        pedirFinal.push(...seleccion);
-      }
-    });
-
     let msjAdmin = "";
-    if (tratosExitosos === 0) {
-      msjAdmin = "No hay trato posible. O no tienes nada, o las rarezas no cuadran.";
-    } else if (joyasArrebatadas > 0) {
-      msjAdmin = `🦈 MODO LOBO EQUITATIVO: Trato ${tratosExitosos}x${tratosExitosos}. Todo se igualó categoría x categoría. Añadiste ${joyasArrebatadas} de sus monas MÁS BUSCADAS para reventa.`;
-    } else {
-      msjAdmin = `⚖️ TRATO PERFECTO: ${tratosExitosos}x${tratosExitosos} igualando categorías exactas y pidiendo solo faltantes.`;
+
+    // ✨ CASO A: EL USUARIO SOLO ENVIÓ FALTANTES (MODO A CIEGAS)
+    if (otroRepetidas.length === 0) {
+      if (darBase.length === 0) {
+        msjAdmin = "No envió repetidas y no tienes nada de lo que le falta. Trato imposible.";
+      } else {
+        // Le doy mi chatarra primero
+        darBase.sort((a, b) => b.balance - a.balance);
+        darFinal = darBase;
+        const tradeSize = darFinal.length;
+
+        // Armamos un array con TODO EL MERCADO
+        let todoElMercado = Object.keys(mercadoGlobal).map(cod => ({
+          codigo: cod,
+          rareza: calcularRareza(cod),
+          balance: mercadoGlobal[cod] || 0,
+          esMiFaltante: !miInventario[cod] || miInventario[cod] === 0
+        })).sort((a, b) => a.balance - b.balance); // Las más buscadas (negativas) quedan de primeras
+
+        // Prioridad 1: Mis faltantes que están en el Top del Mercado
+        let topFaltantes = todoElMercado.filter(m => m.esMiFaltante);
+        // Prioridad 2: Resto del Top Mercado para reventa
+        let topReventa = todoElMercado.filter(m => !m.esMiFaltante);
+
+        // Cobramos exactamente el mismo número de monas
+        pedirFinal = [...topFaltantes, ...topReventa].slice(0, tradeSize);
+
+        msjAdmin = `🕵️ MODO A CIEGAS: Solo envió faltantes. Tú le darás ${tradeSize} monas, y el sistema te armó un cobro exigiendo ${tradeSize} monas sacadas exclusivamente del TOP MÁS BUSCADAS del mercado global.`;
+      }
+    } 
+    // ✨ CASO B: EL USUARIO SÍ ENVIÓ REPETIDAS (MODO LOBO EQUITATIVO NORMAL)
+    else {
+      let pedirBase = otroRepetidas.map(cod => ({ 
+        codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0, esMiFaltante: !miInventario[cod] || miInventario[cod] === 0 
+      }));
+
+      let tratosExitosos = 0;
+      let joyasArrebatadas = 0;
+      const niveles = [5, 4, 3, 1]; 
+
+      niveles.forEach(nivel => {
+        let misDisponiblesLvl = darBase.filter(m => m.rareza.nivel === nivel);
+        let susDisponiblesLvl = pedirBase.filter(m => m.rareza.nivel === nivel);
+        
+        let matchCount = Math.min(misDisponiblesLvl.length, susDisponiblesLvl.length);
+        
+        if (matchCount > 0) {
+          tratosExitosos += matchCount;
+
+          misDisponiblesLvl.sort((a, b) => b.balance - a.balance);
+          darFinal.push(...misDisponiblesLvl.slice(0, matchCount));
+          
+          susDisponiblesLvl.sort((a, b) => {
+            if (a.esMiFaltante && !b.esMiFaltante) return -1;
+            if (!a.esMiFaltante && b.esMiFaltante) return 1;
+            return a.balance - b.balance; 
+          });
+
+          const seleccion = susDisponiblesLvl.slice(0, matchCount);
+          joyasArrebatadas += seleccion.filter(m => !m.esMiFaltante).length;
+          pedirFinal.push(...seleccion);
+        }
+      });
+
+      if (tratosExitosos === 0) {
+        msjAdmin = "No hay trato posible. O no tienes nada, o las rarezas no cuadran.";
+      } else if (joyasArrebatadas > 0) {
+        msjAdmin = `🦈 MODO LOBO EQUITATIVO: Trato ${tratosExitosos}x${tratosExitosos}. Todo se igualó categoría x categoría. Añadiste ${joyasArrebatadas} de sus monas MÁS BUSCADAS para reventa.`;
+      } else {
+        msjAdmin = `⚖️ TRATO PERFECTO: ${tratosExitosos}x${tratosExitosos} igualando categorías exactas y pidiendo solo faltantes.`;
+      }
     }
 
+    // Orden final para la pantalla
     pedirFinal.sort((a, b) => b.rareza.nivel - a.rareza.nivel || (a.esMiFaltante ? -1 : 1) || a.balance - b.balance);
     darFinal.sort((a, b) => b.rareza.nivel - a.rareza.nivel || b.balance - a.balance);
 
@@ -198,7 +267,6 @@ function TruequeInteligente({ usuario }) {
     setGenerando(false);
   };
 
-  // ✨ NUEVO: Función para consolidar el trato y actualizar Base de Datos
   const confirmarTrueque = async () => {
     if (!confirm("¿Ya cerraste el trato con el coleccionista?\n\nAl confirmar, el sistema restará automáticamente las monas que diste y sumará las que recibiste en tu álbum.")) return;
 
@@ -206,26 +274,21 @@ function TruequeInteligente({ usuario }) {
     try {
       let invActualizado = { ...miInventario };
 
-      // 1. Restamos las monas que acabo de entregar
       analisis.dar.forEach(mona => {
         if (invActualizado[mona.codigo] > 0) {
           invActualizado[mona.codigo] -= 1;
         }
       });
 
-      // 2. Sumamos las monas que acabo de recibir
       analisis.pedir.forEach(mona => {
         invActualizado[mona.codigo] = (invActualizado[mona.codigo] || 0) + 1;
       });
 
-      // 3. Subimos el nuevo álbum a Firebase
       await setDoc(doc(db, "inventarios", usuario.uid), invActualizado);
       
-      // 4. Actualizamos el estado local
       setMiInventario(invActualizado);
       alert("¡Inventario actualizado con éxito! 🎉 Se han sumado tus nuevas monas.");
       
-      // 5. Limpiamos la pantalla de radar
       setAnalisis(null);
       setTextoLista("");
     } catch (error) {
@@ -267,12 +330,12 @@ function TruequeInteligente({ usuario }) {
           <span style={{ fontSize: "2.5em" }}>🦈</span>
           <div>
             <h2 style={{ margin: "0", color: WC_COLORS.lime, fontSize: "2em", fontWeight: "900" }}>Lobo Equitativo</h2>
-            <p style={{ margin: "5px 0 0 0", color: "#cbd5e1" }}>Iguala escudo x escudo, jugador x jugador, y exprime las más escasas del mercado.</p>
+            <p style={{ margin: "5px 0 0 0", color: "#cbd5e1" }}>Iguala categorías o exige las Top Buscadas del mercado a ciegas.</p>
           </div>
         </div>
 
         <textarea 
-          placeholder="Pega aquí la lista de 'Me faltan' y 'Repetidas' del otro usuario..."
+          placeholder="Pega aquí la lista de 'Me faltan' y/o 'Repetidas' del otro usuario..."
           value={textoLista}
           onChange={(e) => setTextoLista(e.target.value)}
           style={{ width: "100%", height: "150px", borderRadius: "10px", padding: "15px", fontSize: "0.95em", border: "none", boxSizing: "border-box", marginBottom: "15px", background: "#f8fafc", color: WC_COLORS.darkBlue, outline: "none" }}
@@ -295,7 +358,6 @@ function TruequeInteligente({ usuario }) {
              </div>
           )}
 
-          {/* ✨ NUEVO: CAJA CON LOS DOS BOTONES JUNTOS */}
           <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "15px", marginBottom: "30px" }}>
             <button 
               onClick={descargarImagenPropuesta} 
@@ -358,7 +420,7 @@ function TruequeInteligente({ usuario }) {
               <div style={{ fontSize: "4em", marginBottom: "10px" }}>🤝</div>
               <h2 style={{ margin: "0", fontSize: "2.8em", fontWeight: "900", color: WC_COLORS.darkBlue, textTransform: "uppercase" }}>¡Hagamos un Trato!</h2>
               <p style={{ margin: "10px 0 0 0", color: "#64748b", fontWeight: "bold", fontSize: "1.4em" }}>
-                Trueque Equitativo <span style={{ color: WC_COLORS.green }}>{analisis.dar.length} x {analisis.pedir.length}</span> • Categoría x Categoría
+                Trueque Equitativo <span style={{ color: WC_COLORS.green }}>{analisis.dar.length} x {analisis.pedir.length}</span> • 1:1
               </p>
             </div>
 
