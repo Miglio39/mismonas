@@ -153,7 +153,7 @@ function TruequeInteligente({ usuario }) {
       }
     } else if (idxFaltan !== -1) {
       txtFaltan = txt.substring(idxFaltan);
-      txtRepetidas = ""; // No envió repetidas
+      txtRepetidas = ""; 
     } else if (idxRepetidas !== -1) {
       txtRepetidas = txt.substring(idxRepetidas);
       txtFaltan = "";
@@ -162,7 +162,6 @@ function TruequeInteligente({ usuario }) {
     const otroFaltan = extraerCodigos(txtFaltan);
     const otroRepetidas = extraerCodigos(txtRepetidas);
 
-    // 1. LO QUE YO LE DOY
     let darBase = otroFaltan
       .filter(cod => miInventario[cod] && miInventario[cod] > 1)
       .map(cod => ({ codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0 }));
@@ -171,37 +170,28 @@ function TruequeInteligente({ usuario }) {
     let darFinal = [];
     let msjAdmin = "";
 
-    // ✨ CASO A: EL USUARIO SOLO ENVIÓ FALTANTES (MODO A CIEGAS)
     if (otroRepetidas.length === 0) {
       if (darBase.length === 0) {
         msjAdmin = "No envió repetidas y no tienes nada de lo que le falta. Trato imposible.";
       } else {
-        // Le doy mi chatarra primero
         darBase.sort((a, b) => b.balance - a.balance);
         darFinal = darBase;
         const tradeSize = darFinal.length;
 
-        // Armamos un array con TODO EL MERCADO
         let todoElMercado = Object.keys(mercadoGlobal).map(cod => ({
           codigo: cod,
           rareza: calcularRareza(cod),
           balance: mercadoGlobal[cod] || 0,
           esMiFaltante: !miInventario[cod] || miInventario[cod] === 0
-        })).sort((a, b) => a.balance - b.balance); // Las más buscadas (negativas) quedan de primeras
+        })).sort((a, b) => a.balance - b.balance); 
 
-        // Prioridad 1: Mis faltantes que están en el Top del Mercado
         let topFaltantes = todoElMercado.filter(m => m.esMiFaltante);
-        // Prioridad 2: Resto del Top Mercado para reventa
         let topReventa = todoElMercado.filter(m => !m.esMiFaltante);
 
-        // Cobramos exactamente el mismo número de monas
         pedirFinal = [...topFaltantes, ...topReventa].slice(0, tradeSize);
-
         msjAdmin = `🕵️ MODO A CIEGAS: Solo envió faltantes. Tú le darás ${tradeSize} monas, y el sistema te armó un cobro exigiendo ${tradeSize} monas sacadas exclusivamente del TOP MÁS BUSCADAS del mercado global.`;
       }
-    } 
-    // ✨ CASO B: EL USUARIO SÍ ENVIÓ REPETIDAS (MODO LOBO EQUITATIVO NORMAL)
-    else {
+    } else {
       let pedirBase = otroRepetidas.map(cod => ({ 
         codigo: cod, rareza: calcularRareza(cod), balance: mercadoGlobal[cod] || 0, esMiFaltante: !miInventario[cod] || miInventario[cod] === 0 
       }));
@@ -243,7 +233,6 @@ function TruequeInteligente({ usuario }) {
       }
     }
 
-    // Orden final para la pantalla
     pedirFinal.sort((a, b) => b.rareza.nivel - a.rareza.nivel || (a.esMiFaltante ? -1 : 1) || a.balance - b.balance);
     darFinal.sort((a, b) => b.rareza.nivel - a.rareza.nivel || b.balance - a.balance);
 
@@ -299,9 +288,9 @@ function TruequeInteligente({ usuario }) {
   };
 
   const TarjetaMonaSecreta = ({ item, esPeticion }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "white", padding: "10px 15px", borderRadius: "8px", marginBottom: "8px", border: `1px solid ${item.rareza.color}50`, borderLeft: `5px solid ${item.rareza.color}`, boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }}>
+    <div className="tarjeta-mona" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "white", padding: "10px 15px", borderRadius: "8px", marginBottom: "8px", border: `1px solid ${item.rareza.color}50`, borderLeft: `5px solid ${item.rareza.color}`, boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }}>
       <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
           <span style={{ fontWeight: "900", color: WC_COLORS.darkBlue, fontSize: "1.1em", display: "block" }}>{item.codigo}</span>
           {esPeticion && !item.esMiFaltante && (
              <span style={{ background: "#fef3c7", color: "#d97706", fontSize: "0.7em", fontWeight: "900", padding: "2px 6px", borderRadius: "4px" }}>🔄 COMERCIO</span>
@@ -316,21 +305,37 @@ function TruequeInteligente({ usuario }) {
   );
 
   return (
-    <div style={{ maxWidth: "900px", margin: "auto", fontFamily: "'Inter', sans-serif", padding: "20px" }}>
+    <div style={{ width: "100%", maxWidth: "900px", margin: "auto", fontFamily: "'Inter', sans-serif", padding: "15px", boxSizing: "border-box" }}>
       
-      <div style={{ background: WC_COLORS.darkBlue, padding: "30px", borderRadius: "20px", color: "white", marginBottom: "30px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", position: "relative", overflow: "hidden" }}>
+      {/* ESTILOS RESPONSIVOS INYECTADOS */}
+      <style>{`
+        .btn-accion { width: auto; flex: 1 1 auto; }
+        .caja-principal { padding: 30px; }
+        .titulo-principal { font-size: 2em; }
+        .icono-lobo { font-size: 2.5em; }
+        @media (max-width: 600px) {
+          .btn-accion { width: 100% !important; flex: 1 1 100% !important; }
+          .caja-principal { padding: 20px !important; }
+          .titulo-principal { font-size: 1.6em !important; }
+          .icono-lobo { font-size: 2em !important; }
+          .tarjeta-mona { flex-direction: column; align-items: flex-start !important; gap: 8px; }
+          .tarjeta-mona > span { align-self: flex-start !important; }
+        }
+      `}</style>
+
+      <div className="caja-principal" style={{ background: WC_COLORS.darkBlue, borderRadius: "20px", color: "white", marginBottom: "30px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", position: "relative", overflow: "hidden", boxSizing: "border-box" }}>
         
         {cargando && (
           <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,32,91,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
-             <span style={{ fontWeight: "bold", color: WC_COLORS.lime }}>Sincronizando Mercado Global... 🔄</span>
+             <span style={{ fontWeight: "bold", color: WC_COLORS.lime }}>Sincronizando Mercado... 🔄</span>
           </div>
         )}
 
         <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "15px" }}>
-          <span style={{ fontSize: "2.5em" }}>🦈</span>
+          <span className="icono-lobo">🦈</span>
           <div>
-            <h2 style={{ margin: "0", color: WC_COLORS.lime, fontSize: "2em", fontWeight: "900" }}>Lobo Equitativo</h2>
-            <p style={{ margin: "5px 0 0 0", color: "#cbd5e1" }}>Iguala categorías o exige las Top Buscadas del mercado a ciegas.</p>
+            <h2 className="titulo-principal" style={{ margin: "0", color: WC_COLORS.lime, fontWeight: "900" }}>Lobo Equitativo</h2>
+            <p style={{ margin: "5px 0 0 0", color: "#cbd5e1", fontSize: "0.95em", lineHeight: "1.4" }}>Iguala categorías o exige las Top Buscadas del mercado a ciegas.</p>
           </div>
         </div>
 
@@ -338,7 +343,7 @@ function TruequeInteligente({ usuario }) {
           placeholder="Pega aquí la lista de 'Me faltan' y/o 'Repetidas' del otro usuario..."
           value={textoLista}
           onChange={(e) => setTextoLista(e.target.value)}
-          style={{ width: "100%", height: "150px", borderRadius: "10px", padding: "15px", fontSize: "0.95em", border: "none", boxSizing: "border-box", marginBottom: "15px", background: "#f8fafc", color: WC_COLORS.darkBlue, outline: "none" }}
+          style={{ width: "100%", height: "150px", borderRadius: "10px", padding: "15px", fontSize: "0.95em", border: "none", boxSizing: "border-box", marginBottom: "15px", background: "#f8fafc", color: WC_COLORS.darkBlue, outline: "none", resize: "vertical" }}
         />
 
         <button 
@@ -353,24 +358,26 @@ function TruequeInteligente({ usuario }) {
       {analisis && (
         <>
           {analisis.msjAdmin && (
-             <div style={{ background: "#e0f2fe", borderLeft: `5px solid ${WC_COLORS.lightBlue}`, padding: "15px", borderRadius: "8px", marginBottom: "25px", color: "#0369a1", fontWeight: "bold" }}>
+             <div style={{ background: "#e0f2fe", borderLeft: `5px solid ${WC_COLORS.lightBlue}`, padding: "15px", borderRadius: "8px", marginBottom: "25px", color: "#0369a1", fontWeight: "bold", fontSize: "0.95em", lineHeight: "1.5" }}>
                💡 {analisis.msjAdmin}
              </div>
           )}
 
           <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "15px", marginBottom: "30px" }}>
             <button 
+              className="btn-accion"
               onClick={descargarImagenPropuesta} 
               disabled={generando || analisis.dar.length === 0}
-              style={{ background: "#25D366", color: "white", padding: "15px 25px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(37, 211, 102, 0.3)", display: "inline-flex", alignItems: "center", gap: "8px" }}
+              style={{ background: "#25D366", color: "white", padding: "15px 25px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(37, 211, 102, 0.3)", display: "inline-flex", justifyContent: "center", alignItems: "center", gap: "8px" }}
             >
               {generando ? "Creando Propuesta..." : "📸 Descargar Propuesta"}
             </button>
 
             <button 
+              className="btn-accion"
               onClick={confirmarTrueque} 
               disabled={actualizando || analisis.dar.length === 0}
-              style={{ background: WC_COLORS.darkBlue, color: "white", padding: "15px 25px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(0, 32, 91, 0.3)", display: "inline-flex", alignItems: "center", gap: "8px" }}
+              style={{ background: WC_COLORS.darkBlue, color: "white", padding: "15px 25px", borderRadius: "30px", border: "none", fontWeight: "900", fontSize: "1em", cursor: "pointer", boxShadow: "0 4px 15px rgba(0, 32, 91, 0.3)", display: "inline-flex", justifyContent: "center", alignItems: "center", gap: "8px" }}
             >
               {actualizando ? "Actualizando Base de Datos..." : "✅ ¡Trato Cerrado! Actualizar Álbum"}
             </button>
@@ -378,7 +385,7 @@ function TruequeInteligente({ usuario }) {
 
           <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
             
-            <div style={{ flex: "1 1 300px", background: "#f0fdf4", padding: "20px", borderRadius: "15px", border: `2px solid ${WC_COLORS.green}` }}>
+            <div style={{ flex: "1 1 280px", background: "#f0fdf4", padding: "20px", borderRadius: "15px", border: `2px solid ${WC_COLORS.green}`, boxSizing: "border-box" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
                  <h3 style={{ margin: "0", color: WC_COLORS.green, fontSize: "1.3em", fontWeight: "900" }}>📥 PÍDELE ESTAS</h3>
                  <span style={{ background: WC_COLORS.green, color: "white", padding: "4px 10px", borderRadius: "20px", fontWeight: "900" }}>{analisis.pedir.length}</span>
@@ -391,7 +398,7 @@ function TruequeInteligente({ usuario }) {
               )}
             </div>
 
-            <div style={{ flex: "1 1 300px", background: "#fff1f2", padding: "20px", borderRadius: "15px", border: `2px solid ${WC_COLORS.red}` }}>
+            <div style={{ flex: "1 1 280px", background: "#fff1f2", padding: "20px", borderRadius: "15px", border: `2px solid ${WC_COLORS.red}`, boxSizing: "border-box" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
                  <h3 style={{ margin: "0", color: WC_COLORS.red, fontSize: "1.3em", fontWeight: "900" }}>📤 DALE ESTAS</h3>
                  <span style={{ background: WC_COLORS.red, color: "white", padding: "4px 10px", borderRadius: "20px", fontWeight: "900" }}>{analisis.dar.length}</span>
@@ -408,7 +415,7 @@ function TruequeInteligente({ usuario }) {
       )}
 
       {/* ========================================================= */}
-      {/* CONTENEDOR OCULTO: LA IMAGEN DE PROPUESTA                 */}
+      {/* CONTENEDOR OCULTO: LA IMAGEN DE PROPUESTA (¡INTOCABLE!)   */}
       {/* ========================================================= */}
       {analisis && (
         <div style={{ position: "fixed", top: "-20000px", left: "-20000px", zIndex: -9999 }}>
@@ -420,7 +427,7 @@ function TruequeInteligente({ usuario }) {
               <div style={{ fontSize: "4em", marginBottom: "10px" }}>🤝</div>
               <h2 style={{ margin: "0", fontSize: "2.8em", fontWeight: "900", color: WC_COLORS.darkBlue, textTransform: "uppercase" }}>¡Hagamos un Trato!</h2>
               <p style={{ margin: "10px 0 0 0", color: "#64748b", fontWeight: "bold", fontSize: "1.4em" }}>
-                Trueque Equitativo <span style={{ color: WC_COLORS.green }}>{analisis.dar.length} x {analisis.pedir.length}</span> • 1:1
+                Trueque Equitativo <span style={{ color: WC_COLORS.green }}>{analisis.dar.length} x {analisis.pedir.length}</span> • Categoría x Categoría
               </p>
             </div>
 
